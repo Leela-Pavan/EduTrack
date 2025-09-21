@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Management System - Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            min-height: 400px;
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e9ecef;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        .timeline-marker {
+            position: absolute;
+            left: -35px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 3px #e9ecef;
+        }
+        .timeline-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-graduation-cap me-2"></i>School Management System
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="#student">Student</a>
+                <a class="nav-link" href="#teacher">Teacher</a>
+                <a class="nav-link" href="#admin">Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section text-white py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">Smart School Management System</h1>
+                    <p class="lead mb-4">
+                        Revolutionize education with automated attendance, personalized learning, 
+                        and intelligent scheduling for students, teachers, and administrators.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <button class="btn btn-light btn-lg" onclick="showDemo('student')">
+                            <i class="fas fa-user-graduate me-2"></i>Student Demo
+                        </button>
+                        <button class="btn btn-outline-light btn-lg" onclick="showDemo('teacher')">
+                            <i class="fas fa-chalkboard-teacher me-2"></i>Teacher Demo
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <i class="fas fa-graduation-cap" style="font-size: 15rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-qrcode fa-3x text-primary mb-3"></i>
+                        <h4 class="card-title">Automated Attendance</h4>
+                        <p class="card-text">
+                            QR code scanning, Bluetooth proximity, and face recognition 
+                            for seamless attendance tracking.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-calendar-alt fa-3x text-success mb-3"></i>
+                        <h4 class="card-title">Smart Scheduling</h4>
+                        <p class="card-text">
+                            Personalized daily routines with intelligent free period 
+                            suggestions and task recommendations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                        <h4 class="card-title">Analytics & Reports</h4>
+                        <p class="card-text">
+                            Real-time dashboards and comprehensive reports for 
+                            data-driven educational insights.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Dashboard Demo -->
+    <div id="student" class="container-fluid py-4" style="display: none;">
+        <div class="container">
+            <h2 class="mb-4"><i class="fas fa-user-graduate me-2"></i>Student Dashboard</h2>
+            
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">15</h4>
+                                    <p class="card-text">Present Days</p>
+                                </div>
+                                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">2</h4>
+                                    <p class="card-text">Absent Days</p>
+                                </div>
+                                <i class="fas fa-times-circle fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">3</h4>
+                                    <p class="card-text">Free Periods Today</p>
+                                </div>
+                                <i class="fas fa-clock fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">5</h4>
+                                    <p class="card-text">Suggested Tasks</p>
+                                </div>
+                                <i class="fas fa-tasks fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Schedule -->
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Today's Schedule</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Period</th>
+                                            <th>Time</th>
+                                            <th>Subject</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>1</td>
+                                            <td>08:00 - 08:45</td>
+                                            <td>Mathematics</td>
+                                            <td><span class="badge bg-success">Scheduled</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td>08:45 - 09:30</td>
+                                            <td>Physics</td>
+                                            <td><span class="badge bg-success">Scheduled</span></td>
+                                        </tr>
+                                        <tr class="table-light">
+                                            <td>3</td>
+                                            <td>09:30 - 10:15</td>
+                                            <td>Free Period</td>
+                                            <td><span class="badge bg-secondary">Free</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>4</td>
+                                            <td>10:15 - 11:00</td>
+                                            <td>English</td>
+                                            <td><span class="badge bg-success">Scheduled</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="simulateQRScan()">
+                                    <i class="fas fa-qrcode me-2"></i>Mark Attendance
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="generateRoutine()">
+                                    <i class="fas fa-magic me-2"></i>Generate Daily Routine
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Suggested Tasks</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item">
+                                    <h6>Practice Math Problems</h6>
+                                    <small class="text-muted">30 minutes • High Priority</small>
+                                </div>
+                                <div class="list-group-item">
+                                    <h6>Read Literature</h6>
+                                    <small class="text-muted">20 minutes • Medium Priority</small>
+                                </div>
+                                <div class="list-group-item">
+                                    <h6>Learn Python</h6>
+                                    <small class="text-muted">45 minutes • High Priority</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Dashboard Demo -->
+    <div id="teacher" class="container-fluid py-4" style="display: none;">
+        <div class="container">
+            <h2 class="mb-4"><i class="fas fa-chalkboard-teacher me-2"></i>Teacher Dashboard</h2>
+            
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">4</h4>
+                                    <p class="card-text">Classes Today</p>
+                                </div>
+                                <i class="fas fa-chalkboard fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">28</h4>
+                                    <p class="card-text">Students Present</p>
+                                </div>
+                                <i class="fas fa-user-check fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">2</h4>
+                                    <p class="card-text">Students Absent</p>
+                                </div>
+                                <i class="fas fa-user-times fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">93%</h4>
+                                    <p class="card-text">Attendance Rate</p>
+                                </div>
+                                <i class="fas fa-percentage fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Today's Classes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="accordion" id="classesAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#class1">
+                                            Mathematics - Period 1 (08:00 - 08:45)
+                                        </button>
+                                    </h2>
+                                    <div id="class1" class="accordion-collapse collapse show" data-bs-parent="#classesAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6>Class Information</h6>
+                                                    <p><strong>Class:</strong> 10A</p>
+                                                    <p><strong>Subject:</strong> Mathematics</p>
+                                                    <p><strong>Time:</strong> 08:00 - 08:45</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>Quick Actions</h6>
+                                                    <div class="d-grid gap-2">
+                                                        <button class="btn btn-primary btn-sm" onclick="generateQR()">
+                                                            <i class="fas fa-qrcode me-1"></i>Generate QR Code
+                                                        </button>
+                                                        <button class="btn btn-outline-primary btn-sm">
+                                                            <i class="fas fa-eye me-1"></i>View Attendance
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mt-3">
+                                                <h6>Attendance Status</h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Student Name</th>
+                                                                <th>Status</th>
+                                                                <th>Time Marked</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>John Doe</td>
+                                                                <td><span class="badge bg-success">Present</span></td>
+                                                                <td>08:05</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Jane Smith</td>
+                                                                <td><span class="badge bg-success">Present</span></td>
+                                                                <td>08:03</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Bob Johnson</td>
+                                                                <td><span class="badge bg-danger">Absent</span></td>
+                                                                <td>-</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Attendance Overview</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="attendanceChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard Demo -->
+    <div id="admin" class="container-fluid py-4" style="display: none;">
+        <div class="container">
+            <h2 class="mb-4"><i class="fas fa-chart-bar me-2"></i>Administrator Dashboard</h2>
+            
+            <!-- Overview Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">150</h4>
+                                    <p class="card-text">Total Students</p>
+                                </div>
+                                <i class="fas fa-user-graduate fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">25</h4>
+                                    <p class="card-text">Total Teachers</p>
+                                </div>
+                                <i class="fas fa-chalkboard-teacher fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">1,250</h4>
+                                    <p class="card-text">Present (30 days)</p>
+                                </div>
+                                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">85</h4>
+                                    <p class="card-text">Absent (30 days)</p>
+                                </div>
+                                <i class="fas fa-times-circle fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Class-wise Attendance (Last 7 Days)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Class</th>
+                                            <th>Total Records</th>
+                                            <th>Present</th>
+                                            <th>Attendance Rate</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>10A</strong></td>
+                                            <td>35</td>
+                                            <td>33</td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar bg-success" style="width: 94%">94%</div>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-success">Excellent</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>10B</strong></td>
+                                            <td>32</td>
+                                            <td>28</td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar bg-warning" style="width: 87%">87%</div>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-warning">Good</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>11A</strong></td>
+                                            <td>30</td>
+                                            <td>25</td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar bg-danger" style="width: 83%">83%</div>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-danger">Needs Attention</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Attendance Analytics</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="adminChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Top Button -->
+    <button class="btn btn-primary position-fixed" style="bottom: 20px; right: 20px; z-index: 1000;" onclick="scrollToTop()">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Demo functionality
+        function showDemo(type) {
+            // Hide all demos
+            document.getElementById('student').style.display = 'none';
+            document.getElementById('teacher').style.display = 'none';
+            document.getElementById('admin').style.display = 'none';
+            
+            // Show selected demo
+            document.getElementById(type).style.display = 'block';
+            
+            // Scroll to demo
+            document.getElementById(type).scrollIntoView({ behavior: 'smooth' });
+            
+            // Initialize charts for the demo
+            if (type === 'teacher') {
+                initTeacherChart();
+            } else if (type === 'admin') {
+                initAdminChart();
+            }
+        }
+
+        function simulateQRScan() {
+            alert('QR Code Scanner Simulation\n\nIn a real implementation, this would:\n1. Access device camera\n2. Detect QR code\n3. Parse attendance data\n4. Mark attendance automatically\n\nFor demo: Attendance marked successfully!');
+        }
+
+        function generateRoutine() {
+            const modal = new bootstrap.Modal(document.createElement('div'));
+            modal._element.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Your Daily Smart Routine</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-content">
+                                        <h6>Morning Preparation (7:00 AM - 8:00 AM)</h6>
+                                        <p class="text-muted">Review today's schedule and prepare materials</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-success"></div>
+                                    <div class="timeline-content">
+                                        <h6>Classes (8:00 AM - 2:00 PM)</h6>
+                                        <p class="text-muted">Attend scheduled classes and mark attendance</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-warning"></div>
+                                    <div class="timeline-content">
+                                        <h6>Free Period Activities (11:15 AM - 12:00 PM)</h6>
+                                        <p class="text-muted">• Practice Math problems (30 min)<br>• Read literature (15 min)</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-info"></div>
+                                    <div class="timeline-content">
+                                        <h6>Afternoon Study (2:00 PM - 4:00 PM)</h6>
+                                        <p class="text-muted">Complete assignments and review class notes</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary">Save Routine</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal._element);
+            modal.show();
+        }
+
+        function generateQR() {
+            alert('QR Code Generated!\n\nIn a real implementation, this would generate a QR code containing:\n- Class: 10A\n- Subject: Mathematics\n- Period: 1\n- Timestamp\n\nStudents can scan this to mark attendance.');
+        }
+
+        function initTeacherChart() {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Present', 'Absent'],
+                    datasets: [{
+                        data: [28, 2],
+                        backgroundColor: ['#28a745', '#dc3545'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initAdminChart() {
+            const ctx = document.getElementById('adminChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['10A', '10B', '11A', '11B'],
+                    datasets: [{
+                        label: 'Attendance Rate (%)',
+                        data: [94, 87, 83, 91],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8'],
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Class-wise Attendance Rate'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add smooth scrolling to navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+

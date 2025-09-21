@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Home - School Management System{% endblock %}
+
+{% block content %}
+<div class="hero-section bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Smart School Management System</h1>
+                <p class="lead mb-4">
+                    Revolutionize education with automated attendance, personalized learning, 
+                    and intelligent scheduling for students, teachers, and administrators.
+                </p>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('login') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Register
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <i class="fas fa-graduation-cap" style="font-size: 15rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-qrcode fa-3x text-primary mb-3"></i>
+                    <h4 class="card-title">Automated Attendance</h4>
+                    <p class="card-text">
+                        QR code scanning, Bluetooth proximity, and face recognition 
+                        for seamless attendance tracking.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-alt fa-3x text-success mb-3"></i>
+                    <h4 class="card-title">Smart Scheduling</h4>
+                    <p class="card-text">
+                        Personalized daily routines with intelligent free period 
+                        suggestions and task recommendations.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                    <h4 class="card-title">Analytics & Reports</h4>
+                    <p class="card-text">
+                        Real-time dashboards and comprehensive reports for 
+                        data-driven educational insights.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6">
+                <h2 class="mb-4">For Students</h2>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Quick QR code attendance marking</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Personalized free period suggestions</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Smart daily routine planning</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Progress tracking and insights</li>
+                </ul>
+            </div>
+            <div class="col-lg-6">
+                <h2 class="mb-4">For Teachers</h2>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Real-time attendance monitoring</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Classroom management tools</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Student engagement analytics</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Automated reporting</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

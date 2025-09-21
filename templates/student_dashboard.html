@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - School Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-user-graduate me-2"></i>Welcome, {{ student[3] }} {{ student[4] }}
+                </h1>
+                <div class="text-muted">
+                    <i class="fas fa-calendar me-1"></i>{{ current_date }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ attendance_summary[1] or 0 }}</h4>
+                            <p class="card-text">Present Days</p>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ attendance_summary[2] or 0 }}</h4>
+                            <p class="card-text">Absent Days</p>
+                        </div>
+                        <i class="fas fa-times-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ free_periods|length }}</h4>
+                            <p class="card-text">Free Periods Today</p>
+                        </div>
+                        <i class="fas fa-clock fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ suggested_tasks|length }}</h4>
+                            <p class="card-text">Suggested Tasks</p>
+                        </div>
+                        <i class="fas fa-tasks fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Today's Timetable -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>Today's Schedule
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if timetable %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Time</th>
+                                    <th>Subject</th>
+                                    <th>Teacher</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for period in range(1, 9) %}
+                                {% set period_info = timetable|selectattr('4', 'equalto', period)|first %}
+                                <tr class="{% if period in free_periods %}table-light{% endif %}">
+                                    <td>{{ period }}</td>
+                                    <td>
+                                        {% if period_info %}
+                                            {{ period_info[6] }} - {{ period_info[7] }}
+                                        {% else %}
+                                            Free Period
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if period_info %}
+                                            {{ period_info[5] }}
+                                        {% else %}
+                                            <span class="text-muted">Free</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if period_info %}
+                                            Teacher {{ period_info[0] }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if period_info %}
+                                            <span class="badge bg-success">Scheduled</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Free</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No classes scheduled for today</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Free Periods -->
+        <div class="col-lg-4 mb-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('attendance_qr') }}" class="btn btn-primary">
+                            <i class="fas fa-qrcode me-2"></i>Mark Attendance
+                        </a>
+                        <button class="btn btn-outline-primary" onclick="generateDailyRoutine()">
+                            <i class="fas fa-magic me-2"></i>Generate Daily Routine
+                        </button>
+                        <button class="btn btn-outline-success" onclick="viewProgress()">
+                            <i class="fas fa-chart-line me-2"></i>View Progress
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Free Periods -->
+            {% if free_periods %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Free Periods Today
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for period in free_periods %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Period {{ period }}</span>
+                            <button class="btn btn-sm btn-outline-primary" onclick="suggestActivity({{ period }})">
+                                <i class="fas fa-lightbulb me-1"></i>Suggest
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Suggested Tasks -->
+    {% if suggested_tasks %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tasks me-2"></i>Suggested Tasks for Free Periods
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for task in suggested_tasks %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100 border-start border-{{ 'danger' if task[5] == 'high' else 'warning' if task[5] == 'medium' else 'success' }} border-4">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title">{{ task[2] }}</h6>
+                                        <span class="badge bg-{{ 'danger' if task[5] == 'high' else 'warning' if task[5] == 'medium' else 'success' }}">
+                                            {{ task[5].title() }}
+                                        </span>
+                                    </div>
+                                    <p class="card-text text-muted small">{{ task[3] }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>{{ task[6] }} min
+                                        </small>
+                                        <small class="text-muted">{{ task[4] }}</small>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-sm btn-outline-primary w-100" onclick="startTask({{ task[0] }})">
+                                        <i class="fas fa-play me-1"></i>Start Task
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Daily Routine Modal -->
+<div class="modal fade" id="dailyRoutineModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-magic me-2"></i>Your Daily Smart Routine
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="routineContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Generating routine...</span>
+                        </div>
+                        <p class="mt-2">Generating your personalized daily routine...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveRoutine()">
+                    <i class="fas fa-save me-1"></i>Save Routine
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function generateDailyRoutine() {
+    const modal = new bootstrap.Modal(document.getElementById('dailyRoutineModal'));
+    modal.show();
+    
+    // Simulate routine generation
+    setTimeout(() => {
+        const content = `
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker bg-primary"></div>
+                    <div class="timeline-content">
+                        <h6>Morning Preparation (7:00 AM - 8:00 AM)</h6>
+                        <p class="text-muted">Review today's schedule and prepare materials</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker bg-success"></div>
+                    <div class="timeline-content">
+                        <h6>Classes (8:00 AM - 2:00 PM)</h6>
+                        <p class="text-muted">Attend scheduled classes and mark attendance</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker bg-warning"></div>
+                    <div class="timeline-content">
+                        <h6>Free Period Activities (11:15 AM - 12:00 PM)</h6>
+                        <p class="text-muted">• Practice Math problems (30 min)<br>• Read literature (15 min)</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker bg-info"></div>
+                    <div class="timeline-content">
+                        <h6>Afternoon Study (2:00 PM - 4:00 PM)</h6>
+                        <p class="text-muted">Complete assignments and review class notes</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker bg-secondary"></div>
+                    <div class="timeline-content">
+                        <h6>Skill Development (4:00 PM - 5:00 PM)</h6>
+                        <p class="text-muted">Work on coding project or creative writing</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('routineContent').innerHTML = content;
+    }, 2000);
+}
+
+function suggestActivity(period) {
+    const activities = [
+        "Practice Math problems",
+        "Read a chapter from your favorite book",
+        "Work on your coding project",
+        "Review class notes",
+        "Practice creative writing",
+        "Learn a new skill online"
+    ];
+    
+    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+    
+    alert(`Suggested activity for Period ${period}:\n\n${randomActivity}\n\nDuration: 30-45 minutes`);
+}
+
+function startTask(taskId) {
+    alert(`Starting task ${taskId}. This would open a detailed task view in a real implementation.`);
+}
+
+function viewProgress() {
+    alert('Progress tracking feature would show your academic and skill development progress over time.');
+}
+
+function saveRoutine() {
+    alert('Routine saved! You can view it anytime from your dashboard.');
+}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.border-start {
+    border-left-width: 4px !important;
+}
+</style>
+{% endblock %}
+
+
+

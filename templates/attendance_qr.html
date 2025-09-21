@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance - School Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-qrcode me-2"></i>Mark Attendance
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- QR Code Scanner -->
+                        <div class="col-md-6 mb-4">
+                            <div class="text-center">
+                                <h5>Scan QR Code</h5>
+                                <div id="scanner-container" class="border rounded p-4 mb-3" style="min-height: 300px;">
+                                    <div id="scanner-placeholder" class="d-flex flex-column align-items-center justify-content-center h-100">
+                                        <i class="fas fa-qrcode fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">Position QR code within the frame</p>
+                                        <button class="btn btn-primary" onclick="startScanner()">
+                                            <i class="fas fa-camera me-2"></i>Start Scanner
+                                        </button>
+                                    </div>
+                                    <video id="scanner-video" style="display: none; width: 100%; height: 300px;"></video>
+                                    <canvas id="scanner-canvas" style="display: none;"></canvas>
+                                </div>
+                                
+                                <!-- Alternative Methods -->
+                                <div class="mt-3">
+                                    <h6>Alternative Methods</h6>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary" onclick="simulateBluetooth()">
+                                            <i class="fas fa-bluetooth me-2"></i>Bluetooth Proximity
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="simulateFaceRecognition()">
+                                            <i class="fas fa-user-check me-2"></i>Face Recognition
+                                        </button>
+                                        <button class="btn btn-outline-info" onclick="manualEntry()">
+                                            <i class="fas fa-keyboard me-2"></i>Manual Entry
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Instructions and Status -->
+                        <div class="col-md-6 mb-4">
+                            <h5>Instructions</h5>
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>How to mark attendance:</h6>
+                                <ol class="mb-0">
+                                    <li>Ask your teacher for the QR code</li>
+                                    <li>Point your camera at the QR code</li>
+                                    <li>Wait for automatic detection</li>
+                                    <li>Confirm your attendance</li>
+                                </ol>
+                            </div>
+
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Important:</h6>
+                                <ul class="mb-0">
+                                    <li>Ensure you're in the correct classroom</li>
+                                    <li>Mark attendance only during class time</li>
+                                    <li>Contact teacher if you have issues</li>
+                                </ul>
+                            </div>
+
+                            <!-- Attendance Status -->
+                            <div id="attendance-status" class="mt-4">
+                                <h6>Attendance Status</h6>
+                                <div class="list-group">
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Today's Classes</span>
+                                        <span class="badge bg-secondary">0/0</span>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Last Marked</span>
+                                        <span class="text-muted">Not marked</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Attendance History -->
+                    <div class="mt-4">
+                        <h5>Recent Attendance</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Class</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-history">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No attendance records yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manual Entry Modal -->
+<div class="modal fade" id="manualEntryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-keyboard me-2"></i>Manual Attendance Entry
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="manualEntryForm">
+                    <div class="mb-3">
+                        <label for="classSelect" class="form-label">Class</label>
+                        <select class="form-select" id="classSelect" required>
+                            <option value="">Select Class</option>
+                            <option value="10A">Class 10A</option>
+                            <option value="10B">Class 10B</option>
+                            <option value="11A">Class 11A</option>
+                            <option value="11B">Class 11B</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subjectSelect" class="form-label">Subject</label>
+                        <select class="form-select" id="subjectSelect" required>
+                            <option value="">Select Subject</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Chemistry">Chemistry</option>
+                            <option value="English">English</option>
+                            <option value="Art">Art</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="periodSelect" class="form-label">Period</label>
+                        <select class="form-select" id="periodSelect" required>
+                            <option value="">Select Period</option>
+                            <option value="1">Period 1</option>
+                            <option value="2">Period 2</option>
+                            <option value="3">Period 3</option>
+                            <option value="4">Period 4</option>
+                            <option value="5">Period 5</option>
+                            <option value="6">Period 6</option>
+                            <option value="7">Period 7</option>
+                            <option value="8">Period 8</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitManualEntry()">
+                    <i class="fas fa-check me-1"></i>Mark Attendance
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h4>Attendance Marked Successfully!</h4>
+                <p class="text-muted">Your attendance has been recorded.</p>
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let scanner = null;
+let isScanning = false;
+
+// QR Code patterns for simulation
+const qrPatterns = [
+    '10A:Mathematics:1',
+    '10A:Physics:2',
+    '10A:English:3',
+    '11A:Chemistry:1',
+    '11A:Art:2',
+    '11A:Mathematics:3'
+];
+
+function startScanner() {
+    const placeholder = document.getElementById('scanner-placeholder');
+    const video = document.getElementById('scanner-video');
+    const canvas = document.getElementById('scanner-canvas');
+    
+    placeholder.style.display = 'none';
+    video.style.display = 'block';
+    
+    // Simulate camera access
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+            video.play();
+            isScanning = true;
+            startQRDetection();
+        })
+        .catch(err => {
+            console.error('Camera access denied:', err);
+            // Fallback to simulated QR detection
+            simulateQRDetection();
+        });
+}
+
+function startQRDetection() {
+    const canvas = document.getElementById('scanner-canvas');
+    const video = document.getElementById('scanner-video');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    function detectQR() {
+        if (!isScanning) return;
+        
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Simulate QR detection (in real implementation, use a QR library)
+        if (Math.random() < 0.1) { // 10% chance per frame
+            const randomPattern = qrPatterns[Math.floor(Math.random() * qrPatterns.length)];
+            processQRCode(randomPattern);
+            return;
+        }
+        
+        requestAnimationFrame(detectQR);
+    }
+    
+    video.addEventListener('loadedmetadata', () => {
+        detectQR();
+    });
+}
+
+function simulateQRDetection() {
+    const placeholder = document.getElementById('scanner-placeholder');
+    placeholder.innerHTML = `
+        <i class="fas fa-qrcode fa-3x text-primary mb-3"></i>
+        <p class="text-muted">Simulating QR detection...</p>
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Scanning...</span>
+        </div>
+    `;
+    
+    // Simulate detection after 2 seconds
+    setTimeout(() => {
+        const randomPattern = qrPatterns[Math.floor(Math.random() * qrPatterns.length)];
+        processQRCode(randomPattern);
+    }, 2000);
+}
+
+function processQRCode(qrData) {
+    isScanning = false;
+    
+    // Stop camera
+    const video = document.getElementById('scanner-video');
+    if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+    }
+    
+    // Parse QR data
+    const parts = qrData.split(':');
+    if (parts.length !== 3) {
+        alert('Invalid QR code format');
+        resetScanner();
+        return;
+    }
+    
+    const [class_name, subject, period] = parts;
+    
+    // Show confirmation
+    const confirmed = confirm(`Mark attendance for:\nClass: ${class_name}\nSubject: ${subject}\nPeriod: ${period}\n\nConfirm?`);
+    
+    if (confirmed) {
+        markAttendance(qrData);
+    } else {
+        resetScanner();
+    }
+}
+
+function markAttendance(qrData) {
+    fetch('/attendance/mark', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qr_data: qrData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccessModal();
+            updateAttendanceStatus();
+            loadAttendanceHistory();
+        } else {
+            alert('Error: ' + data.message);
+        }
+        resetScanner();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error marking attendance');
+        resetScanner();
+    });
+}
+
+function resetScanner() {
+    isScanning = false;
+    const placeholder = document.getElementById('scanner-placeholder');
+    const video = document.getElementById('scanner-video');
+    
+    video.style.display = 'none';
+    placeholder.style.display = 'flex';
+    placeholder.innerHTML = `
+        <i class="fas fa-qrcode fa-3x text-muted mb-3"></i>
+        <p class="text-muted">Position QR code within the frame</p>
+        <button class="btn btn-primary" onclick="startScanner()">
+            <i class="fas fa-camera me-2"></i>Start Scanner
+        </button>
+    `;
+}
+
+function simulateBluetooth() {
+    const confirmed = confirm('Simulate Bluetooth proximity detection?\n\nThis would normally detect nearby classroom beacons.');
+    
+    if (confirmed) {
+        // Simulate Bluetooth detection
+        setTimeout(() => {
+            const randomPattern = qrPatterns[Math.floor(Math.random() * qrPatterns.length)];
+            processQRCode(randomPattern);
+        }, 1500);
+    }
+}
+
+function simulateFaceRecognition() {
+    const confirmed = confirm('Simulate face recognition?\n\nThis would normally use your device camera to verify your identity.');
+    
+    if (confirmed) {
+        // Simulate face recognition
+        setTimeout(() => {
+            const randomPattern = qrPatterns[Math.floor(Math.random() * qrPatterns.length)];
+            processQRCode(randomPattern);
+        }, 2000);
+    }
+}
+
+function manualEntry() {
+    const modal = new bootstrap.Modal(document.getElementById('manualEntryModal'));
+    modal.show();
+}
+
+function submitManualEntry() {
+    const classSelect = document.getElementById('classSelect');
+    const subjectSelect = document.getElementById('subjectSelect');
+    const periodSelect = document.getElementById('periodSelect');
+    
+    if (!classSelect.value || !subjectSelect.value || !periodSelect.value) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    const qrData = `${classSelect.value}:${subjectSelect.value}:${periodSelect.value}`;
+    
+    const confirmed = confirm(`Mark attendance for:\nClass: ${classSelect.value}\nSubject: ${subjectSelect.value}\nPeriod: ${periodSelect.value}\n\nConfirm?`);
+    
+    if (confirmed) {
+        markAttendance(qrData);
+        const modal = bootstrap.Modal.getInstance(document.getElementById('manualEntryModal'));
+        modal.hide();
+    }
+}
+
+function showSuccessModal() {
+    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+    modal.show();
+}
+
+function updateAttendanceStatus() {
+    // In a real implementation, this would fetch current status
+    const statusElement = document.getElementById('attendance-status');
+    statusElement.innerHTML = `
+        <h6>Attendance Status</h6>
+        <div class="list-group">
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>Today's Classes</span>
+                <span class="badge bg-success">1/1</span>
+            </div>
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>Last Marked</span>
+                <span class="text-success">Just now</span>
+            </div>
+        </div>
+    `;
+}
+
+function loadAttendanceHistory() {
+    // In a real implementation, this would fetch from API
+    const historyElement = document.getElementById('attendance-history');
+    const today = new Date().toLocaleDateString();
+    
+    historyElement.innerHTML = `
+        <tr>
+            <td>${today}</td>
+            <td>10A</td>
+            <td>Mathematics</td>
+            <td><span class="badge bg-success">Present</span></td>
+            <td>${new Date().toLocaleTimeString()}</td>
+        </tr>
+    `;
+}
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    loadAttendanceHistory();
+});
+</script>
+{% endblock %}
+
+
+
