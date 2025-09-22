@@ -1,6 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}Register - School Management System{% endblock %}
+{% block title %}                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="student_id" class="form-label">Student ID *</label>
+                                    <input type="text" class="form-control" id="student_id" name="student_id" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="class_name" class="form-label">Class *</label>
+                                    <select class="form-select" id="class_name" name="class_name" required>
+                                        <option value="">Select Class</option>
+                                        <option value="6th">6th</option>
+                                        <option value="7th">7th</option>
+                                        <option value="8th">8th</option>
+                                        <option value="9th">9th</option>
+                                        <option value="10th">10th</option>
+                                        <option value="11th">11th</option>
+                                        <option value="12th">12th</option>
+                                    </select>
+                                </div>
+                            </div> School Management System{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -65,23 +83,9 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="section" class="form-label">Section *</label>
-                                    <input type="text" class="form-control" id="section" name="section">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="interests" class="form-label">Interests</label>
-                                    <input type="text" class="form-control" id="interests" name="interests" placeholder="e.g., Mathematics, Science">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="strengths" class="form-label">Strengths</label>
-                                    <input type="text" class="form-control" id="strengths" name="strengths" placeholder="e.g., Problem Solving, Creativity">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="career_goals" class="form-label">Career Goals</label>
-                                    <input type="text" class="form-control" id="career_goals" name="career_goals" placeholder="e.g., Software Engineer">
+                                <div class="col-md-12 mb-3">
+                                    <label for="mobile_number" class="form-label">Mobile Number</label>
+                                    <input type="tel" class="form-control" id="mobile_number" name="mobile_number" placeholder="e.g., +1234567890">
                                 </div>
                             </div>
                         </div>
@@ -111,11 +115,16 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="class_name" class="form-label">Class *</label>
-                                    <input type="text" class="form-control" id="class_name" name="class_name">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="section" class="form-label">Section *</label>
-                                    <input type="text" class="form-control" id="section" name="section">
+                                    <select class="form-select" id="class_name" name="class_name" required>
+                                        <option value="">Select Class</option>
+                                        <option value="6th">6th</option>
+                                        <option value="7th">7th</option>
+                                        <option value="8th">8th</option>
+                                        <option value="9th">9th</option>
+                                        <option value="10th">10th</option>
+                                        <option value="11th">11th</option>
+                                        <option value="12th">12th</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>

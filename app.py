@@ -174,7 +174,8 @@ def register():
             first_name = request.form['first_name']
             last_name = request.form['last_name']
             class_name = request.form['class_name']
-            section = request.form['section']
+            section = request.form.get('section', 'A')  # Default to 'A' if not provided
+            mobile_number = request.form.get('mobile_number', '')
             interests = request.form.get('interests', '')
             strengths = request.form.get('strengths', '')
             career_goals = request.form.get('career_goals', '')
@@ -184,25 +185,27 @@ def register():
             last_name = request.form['last_name']
             subject = request.form['subject']
             class_name = request.form['class_name']
-            section = request.form['section']
+            section = request.form.get('section', 'A')  # Default to 'A' if not provided
+            mobile_number = request.form.get('mobile_number', '')
         
         conn = sqlite3.connect('school_system.db')
         cursor = conn.cursor()
         
         try:
-            # Create user account
+            # Create user account with mobile number
             password_hash = generate_password_hash(password)
-            cursor.execute('INSERT INTO users (username, password_hash, role, email) VALUES (?, ?, ?, ?)',
-                         (username, password_hash, role, email))
+            cursor.execute('''INSERT INTO users (username, password_hash, role, email, mobile_number) 
+                             VALUES (?, ?, ?, ?, ?)''',
+                         (username, password_hash, role, email, mobile_number))
             user_id = cursor.lastrowid
             
             # Create role-specific profile
             if role == 'student':
                 cursor.execute('''INSERT INTO students (user_id, student_id, first_name, last_name, 
-                                 class_name, section, interests, strengths, career_goals) 
-                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                                 class_name, section, mobile_number, interests, strengths, career_goals) 
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                              (user_id, student_id, first_name, last_name, class_name, section, 
-                              interests, strengths, career_goals))
+                              mobile_number, interests, strengths, career_goals))
             elif role == 'teacher':
                 cursor.execute('''INSERT INTO teachers (user_id, teacher_id, first_name, last_name, 
                                  subject, class_name, section) VALUES (?, ?, ?, ?, ?, ?, ?)''',

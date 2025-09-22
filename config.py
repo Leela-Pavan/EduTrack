@@ -1,6 +1,10 @@
 # EduTrack Configuration File
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Config:
     """Base configuration class."""
@@ -38,6 +42,16 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'noreply@edutrack.app'
+    
+    # SMS Configuration (Twilio for verification)
+    TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
+    TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
+    TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
+    
+    # Verification Settings
+    VERIFICATION_CODE_LENGTH = 6
+    VERIFICATION_CODE_EXPIRY_MINUTES = 10
+    MAX_VERIFICATION_ATTEMPTS = 3
     
     # Application Settings
     ITEMS_PER_PAGE = 20
