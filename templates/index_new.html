@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTrack - Smart Curriculum Activity & Attendance App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/edutrack-theme.css') }}" rel="stylesheet">
+</head>
+<body class="home-page">
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light-blue fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-graduation-cap text-primary me-2"></i>
+                <span class="brand-text">EduTrack</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Contact</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6">
+                    <div class="hero-content">
+                        <h1 class="display-4 fw-bold text-primary mb-4">
+                            EduTrack
+                            <span class="text-secondary d-block fs-3">Smart Curriculum Activity & Attendance App</span>
+                        </h1>
+                        <p class="lead text-muted mb-4">
+                            "Learning never stops" - Empowering education through smart technology and seamless management.
+                        </p>
+                        
+                        <!-- Login Buttons -->
+                        <div class="login-buttons">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <a href="{{ url_for('student_login') }}" class="btn btn-student btn-lg w-100">
+                                        <i class="fas fa-user-graduate mb-2"></i>
+                                        <div>Student Login</div>
+                                    </a>
+                                </div>
+                                <div class="col-md-4">
+                                    <a href="{{ url_for('teacher_login') }}" class="btn btn-teacher btn-lg w-100">
+                                        <i class="fas fa-chalkboard-teacher mb-2"></i>
+                                        <div>Teacher Login</div>
+                                    </a>
+                                </div>
+                                <div class="col-md-4">
+                                    <a href="{{ url_for('admin_login') }}" class="btn btn-admin btn-lg w-100">
+                                        <i class="fas fa-user-shield mb-2"></i>
+                                        <div>Admin Login</div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-image text-center">
+                        <img src="{{ url_for('static', filename='images/education-hero.svg') }}" alt="Education" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold text-primary">Why Choose EduTrack?</h2>
+                <p class="lead text-muted">Comprehensive solution for modern education management</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-qrcode fa-3x text-primary"></i>
+                        </div>
+                        <h4>Smart Attendance</h4>
+                        <p class="text-muted">Scanner-based attendance system that updates every 30 seconds for real-time tracking.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-chart-line fa-3x text-success"></i>
+                        </div>
+                        <h4>Progress Tracking</h4>
+                        <p class="text-muted">Comprehensive marks management with Mid-1, Mid-2, and Semester evaluations.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-project-diagram fa-3x text-info"></i>
+                        </div>
+                        <h4>Project Management</h4>
+                        <p class="text-muted">Submit and manage projects with file storage, descriptions, and tracking.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-tasks fa-3x text-warning"></i>
+                        </div>
+                        <h4>Assignment Hub</h4>
+                        <p class="text-muted">Centralized assignment submission and tracking system with status indicators.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-shield-alt fa-3x text-danger"></i>
+                        </div>
+                        <h4>Secure Verification</h4>
+                        <p class="text-muted">Email and mobile verification with secure authentication system.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-mobile-alt fa-3x text-purple"></i>
+                        </div>
+                        <h4>Responsive Design</h4>
+                        <p class="text-muted">Works seamlessly on desktop and mobile devices with intuitive navigation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h2 class="display-5 fw-bold text-primary mb-4">About EduTrack</h2>
+                    <p class="lead text-muted mb-4">
+                        EduTrack is a comprehensive educational management system designed to streamline curriculum activities, 
+                        attendance tracking, and academic progress monitoring.
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stat-item text-center p-3">
+                                <h3 class="text-primary fw-bold">100%</h3>
+                                <p class="text-muted mb-0">Digital</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item text-center p-3">
+                                <h3 class="text-success fw-bold">24/7</h3>
+                                <p class="text-muted mb-0">Access</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item text-center p-3">
+                                <h3 class="text-info fw-bold">Real-time</h3>
+                                <p class="text-muted mb-0">Updates</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item text-center p-3">
+                                <h3 class="text-warning fw-bold">Secure</h3>
+                                <p class="text-muted mb-0">Platform</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <img src="{{ url_for('static', filename='images/about-education.svg') }}" alt="About EduTrack" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="footer-brand mb-3">
+                        <i class="fas fa-graduation-cap me-2"></i>
+                        <span class="fw-bold">EduTrack</span>
+                    </div>
+                    <p class="text-muted mb-0">Smart Curriculum Activity & Attendance App</p>
+                    <p class="text-muted">&copy; 2025 EduTrack. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="footer-links">
+                        <a href="#" class="text-white me-3">Privacy Policy</a>
+                        <a href="#" class="text-white me-3">Terms of Service</a>
+                        <a href="#contact" class="text-white">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Contact Box -->
+    <div class="floating-contact">
+        <div class="contact-toggle" onclick="toggleContact()">
+            <i class="fas fa-envelope"></i>
+        </div>
+        <div class="contact-content" id="contactContent">
+            <div class="contact-header">
+                <h6 class="mb-0">Contact Us</h6>
+                <button class="btn-close-contact" onclick="toggleContact()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="contact-body">
+                <div class="contact-item">
+                    <i class="fas fa-envelope text-primary"></i>
+                    <span>support@edutrack.com</span>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-phone text-success"></i>
+                    <span>+91 9876543210</span>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-clock text-info"></i>
+                    <span>24/7 Support</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/edutrack.js') }}"></script>
+</body>
+</html>
