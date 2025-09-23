@@ -1,24 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="student_id" class="form-label">Student ID *</label>
-                                    <input type="text" class="form-control" id="student_id" name="student_id" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="class_name" class="form-label">Class *</label>
-                                    <select class="form-select" id="class_name" name="class_name" required>
-                                        <option value="">Select Class</option>
-                                        <option value="6th">6th</option>
-                                        <option value="7th">7th</option>
-                                        <option value="8th">8th</option>
-                                        <option value="9th">9th</option>
-                                        <option value="10th">10th</option>
-                                        <option value="11th">11th</option>
-                                        <option value="12th">12th</option>
-                                    </select>
-                                </div>
-                            </div> School Management System{% endblock %}
+{% block title %}Register - School Management System{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -55,7 +37,6 @@
                                     <option value="">Select Role</option>
                                     <option value="student">Student</option>
                                     <option value="teacher">Teacher</option>
-                                    <option value="admin">Administrator</option>
                                 </select>
                             </div>
                         </div>
@@ -68,8 +49,12 @@
                                     <input type="text" class="form-control" id="student_id" name="student_id">
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="class_name" class="form-label">Class *</label>
-                                    <input type="text" class="form-control" id="class_name" name="class_name">
+                                    <label for="department" class="form-label">Department *</label>
+                                    <select class="form-select" id="department" name="department" required>
+                                        <option value="">Select Department</option>
+                                        <option value="CSD">Computer Science and Design (CSD)</option>
+                                        <option value="CSIT">Computer Science and Information Technology (CSIT)</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="row">
@@ -80,6 +65,27 @@
                                 <div class="col-md-6 mb-3">
                                     <label for="last_name" class="form-label">Last Name *</label>
                                     <input type="text" class="form-control" id="last_name" name="last_name">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="section" class="form-label">Section *</label>
+                                    <select class="form-select" id="section" name="section" required>
+                                        <option value="">Select Section</option>
+                                        <option value="A">Section A</option>
+                                        <option value="B">Section B</option>
+                                        <option value="C">Section C</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="year" class="form-label">Year *</label>
+                                    <select class="form-select" id="year" name="year" required>
+                                        <option value="">Select Year</option>
+                                        <option value="1">1st Year</option>
+                                        <option value="2">2nd Year</option>
+                                        <option value="3">3rd Year</option>
+                                        <option value="4">4th Year</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="row">
@@ -114,17 +120,18 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="class_name" class="form-label">Class *</label>
-                                    <select class="form-select" id="class_name" name="class_name" required>
-                                        <option value="">Select Class</option>
-                                        <option value="6th">6th</option>
-                                        <option value="7th">7th</option>
-                                        <option value="8th">8th</option>
-                                        <option value="9th">9th</option>
-                                        <option value="10th">10th</option>
-                                        <option value="11th">11th</option>
-                                        <option value="12th">12th</option>
+                                    <label for="designation" class="form-label">Designation *</label>
+                                    <select class="form-select" id="designation" name="designation" required>
+                                        <option value="">Select Designation</option>
+                                        <option value="HOD">Head of Department (HOD)</option>
+                                        <option value="Prof">Professor</option>
+                                        <option value="Asst prof">Assistant Professor</option>
+                                        <option value="lab asst">Lab Assistant</option>
                                     </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="mobile_number" class="form-label">Mobile Number</label>
+                                    <input type="tel" class="form-control" id="mobile_number" name="mobile_number" placeholder="e.g., +1234567890">
                                 </div>
                             </div>
                         </div>

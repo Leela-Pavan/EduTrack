@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import sqlite3
 import os
 import json
@@ -42,6 +43,8 @@ def init_db():
             interests TEXT,
             strengths TEXT,
             career_goals TEXT,
+            mobile TEXT,
+            profile_picture TEXT,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
@@ -57,6 +60,8 @@ def init_db():
             subject TEXT NOT NULL,
             class_name TEXT NOT NULL,
             section TEXT NOT NULL,
+            mobile TEXT,
+            profile_picture TEXT,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
@@ -107,8 +112,71 @@ def init_db():
         )
     ''')
     
+    # Admin password storage table (for admin to view user passwords)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admin_password_store (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            plain_password TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Create default admin account if it doesn't exist
+    from werkzeug.security import generate_password_hash
+    admin_password_hash = generate_password_hash('ADMIN')
+    cursor.execute('''INSERT OR IGNORE INTO users (username, password_hash, role, email, mobile_number) 
+                     VALUES (?, ?, ?, ?, ?)''',
+                 ('ADMIN', admin_password_hash, 'admin', 'admin@edutrack.com', ''))
+    
     conn.commit()
     conn.close()
+
+def migrate_database():
+    """Add missing columns to existing tables"""
+    conn = sqlite3.connect('school_system.db')
+    cursor = conn.cursor()
+    
+    try:
+        # Check if mobile column exists in students table
+        cursor.execute("PRAGMA table_info(students)")
+        students_columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'mobile' not in students_columns:
+            cursor.execute("ALTER TABLE students ADD COLUMN mobile TEXT")
+        
+        if 'profile_picture' not in students_columns:
+            cursor.execute("ALTER TABLE students ADD COLUMN profile_picture TEXT")
+        
+        # Check if mobile column exists in teachers table
+        cursor.execute("PRAGMA table_info(teachers)")
+        teachers_columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'mobile' not in teachers_columns:
+            cursor.execute("ALTER TABLE teachers ADD COLUMN mobile TEXT")
+        
+        if 'profile_picture' not in teachers_columns:
+            cursor.execute("ALTER TABLE teachers ADD COLUMN profile_picture TEXT")
+        
+        # Create admin password store table if it doesn't exist
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS admin_password_store (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                plain_password TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        ''')
+        
+        conn.commit()
+    except Exception as e:
+        print(f"Migration error: {e}")
+    finally:
+        conn.close()
 
 # Login required decorator
 def login_required(f):
@@ -153,9 +221,17 @@ def login():
             session['user_id'] = user[0]
             session['username'] = username
             session['role'] = user[2]
+            print(f"=== Login Successful ===")
+            print(f"User ID: {user[0]}")
+            print(f"Username: {username}")
+            print(f"Role: {user[2]}")
+            print(f"Session after login: {session}")
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
         else:
+            print(f"=== Login Failed ===")
+            print(f"Username: {username}")
+            print(f"User found: {user}")
             flash('Invalid username or password', 'error')
     
     return render_template('login.html')
@@ -168,13 +244,19 @@ def register():
         email = request.form['email']
         role = request.form['role']
         
+        # Prevent admin registration through the form
+        if role == 'admin':
+            flash('Admin registration is not allowed. Admin account is pre-configured.', 'error')
+            return render_template('register.html')
+        
         # Additional fields based on role
         if role == 'student':
             student_id = request.form['student_id']
             first_name = request.form['first_name']
             last_name = request.form['last_name']
-            class_name = request.form['class_name']
-            section = request.form.get('section', 'A')  # Default to 'A' if not provided
+            department = request.form['department']  # Changed from class_name to department
+            section = request.form['section']  # Now required field
+            year = request.form['year']  # New field
             mobile_number = request.form.get('mobile_number', '')
             interests = request.form.get('interests', '')
             strengths = request.form.get('strengths', '')
@@ -184,8 +266,7 @@ def register():
             first_name = request.form['first_name']
             last_name = request.form['last_name']
             subject = request.form['subject']
-            class_name = request.form['class_name']
-            section = request.form.get('section', 'A')  # Default to 'A' if not provided
+            designation = request.form['designation']  # Changed from class_name to designation
             mobile_number = request.form.get('mobile_number', '')
         
         conn = sqlite3.connect('school_system.db')
@@ -204,12 +285,12 @@ def register():
                 cursor.execute('''INSERT INTO students (user_id, student_id, first_name, last_name, 
                                  class_name, section, mobile_number, interests, strengths, career_goals) 
                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                             (user_id, student_id, first_name, last_name, class_name, section, 
+                             (user_id, student_id, first_name, last_name, f"{department}-{year}", section, 
                               mobile_number, interests, strengths, career_goals))
             elif role == 'teacher':
                 cursor.execute('''INSERT INTO teachers (user_id, teacher_id, first_name, last_name, 
                                  subject, class_name, section) VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                             (user_id, teacher_id, first_name, last_name, subject, class_name, section))
+                             (user_id, teacher_id, first_name, last_name, subject, designation, 'N/A'))
             
             conn.commit()
             conn.close()
@@ -233,12 +314,21 @@ def logout():
 @login_required
 def dashboard():
     role = session['role']
+    print(f"=== Dashboard Route Called ===")
+    print(f"User role: {role}")
+    print(f"Session: {session}")
+    
     if role == 'student':
+        print("Redirecting to student_dashboard")
         return redirect(url_for('student_dashboard'))
     elif role == 'teacher':
+        print("Redirecting to teacher_dashboard")
         return redirect(url_for('teacher_dashboard'))
     elif role == 'admin':
+        print("Redirecting to admin_dashboard")
         return redirect(url_for('admin_dashboard'))
+    
+    print("No matching role, redirecting to login")
     return redirect(url_for('login'))
 
 @app.route('/student/dashboard')
@@ -249,7 +339,7 @@ def student_dashboard():
     cursor = conn.cursor()
     
     # Get student info
-    cursor.execute('''SELECT s.*, u.username FROM students s 
+    cursor.execute('''SELECT s.*, u.username, u.email FROM students s 
                      JOIN users u ON s.user_id = u.id WHERE u.id = ?''', (session['user_id'],))
     student = cursor.fetchone()
     
@@ -298,7 +388,7 @@ def teacher_dashboard():
     cursor = conn.cursor()
     
     # Get teacher info
-    cursor.execute('''SELECT t.*, u.username FROM teachers t 
+    cursor.execute('''SELECT t.*, u.username, u.email FROM teachers t 
                      JOIN users u ON t.user_id = u.id WHERE u.id = ?''', (session['user_id'],))
     teacher = cursor.fetchone()
     
@@ -376,6 +466,253 @@ def admin_dashboard():
                          attendance_stats=attendance_stats,
                          class_attendance=class_attendance,
                          current_date=current_date)
+
+@app.route('/api/students')
+@login_required
+def get_all_students():
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    conn = sqlite3.connect('school_system.db')
+    cursor = conn.cursor()
+    
+    # Get all students with their details and passwords
+    cursor.execute('''
+        SELECT s.student_id, s.first_name, s.last_name, s.class_name, s.section, 
+               s.mobile, u.email, u.username, aps.plain_password
+        FROM students s
+        LEFT JOIN users u ON s.user_id = u.id
+        LEFT JOIN admin_password_store aps ON u.id = aps.user_id
+        ORDER BY s.class_name, s.section, s.first_name, s.last_name
+    ''')
+    
+    students = cursor.fetchall()
+    conn.close()
+    
+    # Format the data for JSON response
+    student_list = []
+    for student in students:
+        # Apply department mapping
+        class_display = student[3]
+        if student[3] == '10':
+            class_display = 'CSIT'
+        elif student[3] == '11':
+            class_display = 'CSD'
+        elif student[3] == '12':
+            class_display = 'CSE'
+        
+        student_list.append({
+            'student_id': student[0],
+            'name': f"{student[1]} {student[2]}",
+            'department': class_display,
+            'section': student[4],
+            'year': '2',  # Default year as we don't have this in current schema
+            'email': student[6] if student[6] else 'Not provided',
+            'mobile': student[5] if student[5] else 'Not provided',
+            'password': student[8] if student[8] else student[7] if student[7] else 'Not set'  # Plain password or username
+        })
+    
+    return jsonify(student_list)
+
+@app.route('/api/teachers')
+@login_required
+def get_all_teachers():
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    conn = sqlite3.connect('school_system.db')
+    cursor = conn.cursor()
+    
+    # Get all teachers with their details and passwords
+    cursor.execute('''
+        SELECT t.teacher_id, t.first_name, t.last_name, t.subject, 
+               t.class_name, t.section, u.email, u.username, aps.plain_password
+        FROM teachers t
+        LEFT JOIN users u ON t.user_id = u.id
+        LEFT JOIN admin_password_store aps ON u.id = aps.user_id
+        ORDER BY t.first_name, t.last_name
+    ''')
+    
+    teachers = cursor.fetchall()
+    conn.close()
+    
+    # Format the data for JSON response
+    teacher_list = []
+    for teacher in teachers:
+        # Apply department mapping
+        class_display = teacher[4]  # class_name
+        if teacher[4] == '10':
+            class_display = 'CSIT'
+        elif teacher[4] == '11':
+            class_display = 'CSD'
+        elif teacher[4] == '12':
+            class_display = 'CSE'
+        
+        teacher_list.append({
+            'teacher_id': teacher[0],
+            'name': f"{teacher[1]} {teacher[2]}",
+            'subject': teacher[3] if teacher[3] else 'Not assigned',
+            'department': class_display,
+            'section': teacher[5] if teacher[5] else 'All',
+            'email': teacher[6] if teacher[6] else 'Not provided',
+            'password': teacher[8] if teacher[8] else teacher[7] if teacher[7] else 'Not set'  # Plain password or username
+        })
+    
+    return jsonify(teacher_list)
+
+@app.route('/api/add_student', methods=['POST'])
+@login_required
+def add_student():
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # First create user account
+        password = 'student123'  # Default password
+        cursor.execute('''
+            INSERT INTO users (username, password_hash, role, email)
+            VALUES (?, ?, 'student', ?)
+        ''', (data['student_id'], generate_password_hash(password), data['email']))
+        
+        user_id = cursor.lastrowid
+        
+        # Store plain password for admin reference
+        cursor.execute('''
+            INSERT INTO admin_password_store (user_id, plain_password)
+            VALUES (?, ?)
+        ''', (user_id, password))
+        
+        # Then create student record
+        cursor.execute('''
+            INSERT INTO students (user_id, student_id, first_name, last_name, class_name, section, mobile)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, data['student_id'], data['first_name'], data['last_name'], 
+              data['department'], data['section'], data['mobile']))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Student added successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/add_teacher', methods=['POST'])
+@login_required  
+def add_teacher():
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # First create user account
+        password = 'teacher123'  # Default password
+        cursor.execute('''
+            INSERT INTO users (username, password_hash, role, email)
+            VALUES (?, ?, 'teacher', ?)
+        ''', (data['teacher_id'], generate_password_hash(password), data['email']))
+        
+        user_id = cursor.lastrowid
+        
+        # Store plain password for admin reference
+        cursor.execute('''
+            INSERT INTO admin_password_store (user_id, plain_password)
+            VALUES (?, ?)
+        ''', (user_id, password))
+        
+        # Then create teacher record
+        cursor.execute('''
+            INSERT INTO teachers (user_id, teacher_id, first_name, last_name, subject, class_name, section, mobile)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, data['teacher_id'], data['first_name'], data['last_name'],
+              data['subject'], data['department'], data['section'], data['mobile']))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Teacher added successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/delete_student/<student_id>', methods=['DELETE'])
+@login_required
+def delete_student(student_id):
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Get user_id before deleting student
+        cursor.execute('SELECT user_id FROM students WHERE student_id = ?', (student_id,))
+        result = cursor.fetchone()
+        
+        if result:
+            user_id = result[0]
+            
+            # Delete from students table
+            cursor.execute('DELETE FROM students WHERE student_id = ?', (student_id,))
+            
+            # Delete from admin_password_store table
+            cursor.execute('DELETE FROM admin_password_store WHERE user_id = ?', (user_id,))
+            
+            # Delete from users table
+            cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'success': True, 'message': 'Student deleted successfully'})
+        else:
+            return jsonify({'error': 'Student not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/delete_teacher/<teacher_id>', methods=['DELETE'])
+@login_required
+def delete_teacher(teacher_id):
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Get user_id before deleting teacher
+        cursor.execute('SELECT user_id FROM teachers WHERE teacher_id = ?', (teacher_id,))
+        result = cursor.fetchone()
+        
+        if result:
+            user_id = result[0]
+            
+            # Delete from teachers table
+            cursor.execute('DELETE FROM teachers WHERE teacher_id = ?', (teacher_id,))
+            
+            # Delete from admin_password_store table
+            cursor.execute('DELETE FROM admin_password_store WHERE user_id = ?', (user_id,))
+            
+            # Delete from users table
+            cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'success': True, 'message': 'Teacher deleted successfully'})
+        else:
+            return jsonify({'error': 'Teacher not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/attendance/qr')
 @login_required
@@ -606,8 +943,120 @@ def populate_dummy_data():
     conn.commit()
     conn.close()
 
+@app.route('/api/update_student_profile', methods=['POST'])
+@login_required
+def update_student_profile():
+    try:
+        data = request.get_json()
+        user_id = session['user_id']
+        
+        # Update user table
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Update email in users table
+        cursor.execute('UPDATE users SET email = ? WHERE id = ?', 
+                      (data['email'], user_id))
+        
+        # Update student table
+        cursor.execute('''UPDATE students SET 
+                         first_name = ?, last_name = ?, class_name = ?, 
+                         section = ?, mobile = ?
+                         WHERE user_id = ?''',
+                      (data['first_name'], data['last_name'], data['department'], 
+                       data['section'], data['mobile'], user_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/update_teacher_profile', methods=['POST'])
+@login_required
+def update_teacher_profile():
+    try:
+        data = request.get_json()
+        user_id = session['user_id']
+        
+        # Update user table
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Update email in users table
+        cursor.execute('UPDATE users SET email = ? WHERE id = ?', 
+                      (data['email'], user_id))
+        
+        # Update teacher table
+        cursor.execute('''UPDATE teachers SET 
+                         first_name = ?, last_name = ?, subject = ?, 
+                         class_name = ?, section = ?, mobile = ?
+                         WHERE user_id = ?''',
+                      (data['first_name'], data['last_name'], data['subject'],
+                       data['department'], data['section'], data['mobile'], user_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/upload_profile_picture', methods=['POST'])
+@login_required
+def upload_profile_picture():
+    try:
+        if 'profile_picture' not in request.files:
+            return jsonify({'success': False, 'error': 'No file uploaded'}), 400
+        
+        file = request.files['profile_picture']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        if file and allowed_file(file.filename):
+            # Create uploads directory if it doesn't exist
+            upload_dir = os.path.join(app.static_folder, 'uploads')
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir)
+            
+            # Generate unique filename
+            filename = secure_filename(f"{session['user_id']}_{file.filename}")
+            filepath = os.path.join(upload_dir, filename)
+            file.save(filepath)
+            
+            # Update database with image path
+            conn = sqlite3.connect('school_system.db')
+            cursor = conn.cursor()
+            
+            # Check if user is student or teacher
+            role = session.get('role')
+            image_url = f"/static/uploads/{filename}"
+            
+            if role == 'student':
+                cursor.execute('UPDATE students SET profile_picture = ? WHERE user_id = ?',
+                              (image_url, session['user_id']))
+            elif role == 'teacher':
+                cursor.execute('UPDATE teachers SET profile_picture = ? WHERE user_id = ?',
+                              (image_url, session['user_id']))
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({'success': True, 'image_url': image_url})
+        else:
+            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 if __name__ == '__main__':
     init_db()
+    migrate_database()
     populate_dummy_data()
     app.run(debug=True)
 

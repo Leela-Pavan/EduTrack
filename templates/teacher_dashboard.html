@@ -4,8 +4,70 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="row">
-        <div class="col-12">
+    <div class=                                                <button class="btn btn-primary btn-sm" 
+                                                        onclick="generateQRCode('{{ class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') }}', '{{ class_info[2] }}', '{{ class_info[5] }}', {{ class_info[4] }})">ow">
+        <!-- Left Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Profile
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="profile-image-container mb-3">
+                        {% if teacher[9] %}
+                            <img id="profileImage" src="{{ teacher[9] }}" 
+                                 alt="Profile Picture" class="profile-image" 
+                                 style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff;">
+                        {% else %}
+                            <div id="profileImage" class="profile-image d-flex align-items-center justify-content-center" 
+                                 style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 3px solid #007bff; color: white; font-size: 36px; font-weight: bold;">
+                                {{ teacher[3][0] }}{{ teacher[4][0] }}
+                            </div>
+                        {% endif %}
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="changeProfilePicture()">
+                                <i class="fas fa-camera me-1"></i>Change Photo
+                            </button>
+                        </div>
+                    </div>
+                    <h6 class="card-title">{{ teacher[3] }} {{ teacher[4] }}</h6>
+                    <p class="text-muted">{{ teacher[5] }}</p>
+                    <p class="text-muted small">
+                        <i class="fas fa-phone me-1"></i>{{ teacher[8] or 'No phone number' }}
+                    </p>
+                    <button class="btn btn-primary btn-sm" onclick="showProfileModal()">
+                        <i class="fas fa-edit me-1"></i>Edit Profile
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-success btn-sm" onclick="generateAllQRCodes()">
+                            <i class="fas fa-qrcode me-1"></i>Generate All QR Codes
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="viewAttendanceReport()">
+                            <i class="fas fa-chart-line me-1"></i>View Reports
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="exportAttendance()">
+                            <i class="fas fa-download me-1"></i>Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0">
                     <i class="fas fa-chalkboard-teacher me-2"></i>Welcome, {{ teacher[3] }} {{ teacher[4] }}
@@ -14,8 +76,6 @@
                     <i class="fas fa-calendar me-1"></i>{{ current_date }}
                 </div>
             </div>
-        </div>
-    </div>
 
     <!-- Quick Stats -->
     <div class="row mb-4">
@@ -96,7 +156,8 @@
                                             <strong>{{ class_info[5] }}</strong> - Period {{ class_info[4] }}
                                         </div>
                                         <div class="text-muted">
-                                            {{ class_info[6] }} - {{ class_info[7] }}
+                                            {% set class_display = class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') %}
+                                            {{ class_display }}-{{ class_info[2] }}
                                         </div>
                                     </div>
                                 </button>
@@ -108,7 +169,10 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <h6>Class Information</h6>
-                                            <p><strong>Class:</strong> {{ class_info[1] }}{{ class_info[2] }}</p>
+                                            <p><strong>Class:</strong>                                     <h5 class="mb-0">
+                                        {% set class_display = class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') %}
+                                        {{ class_display }}{{ class_info[2] }}
+                                    </h5></p>
                                             <p><strong>Subject:</strong> {{ class_info[5] }}</p>
                                             <p><strong>Time:</strong> {{ class_info[6] }} - {{ class_info[7] }}</p>
                                         </div>
@@ -116,7 +180,7 @@
                                             <h6>Quick Actions</h6>
                                             <div class="d-grid gap-2">
                                                 <button class="btn btn-primary btn-sm" 
-                                                        onclick="generateQRCode('{{ class_info[1] }}', '{{ class_info[2] }}', '{{ class_info[5] }}', {{ class_info[4] }})">
+                                                        onclick="generateQRCode('{{ class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') }}', '{{ class_info[2] }}', '{{ class_info[5] }}', {{ class_info[4] }})">>
                                                     <i class="fas fa-qrcode me-1"></i>Generate QR Code
                                                 </button>
                                                 <button class="btn btn-outline-primary btn-sm" 
@@ -251,6 +315,69 @@
             </div>
         </div>
     </div>
+
+    <!-- Profile Edit Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-edit me-2"></i>Edit Profile
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="profileForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editFirstName" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="editFirstName" value="{{ teacher[3] }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editLastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="editLastName" value="{{ teacher[4] }}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSubject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="editSubject" value="{{ teacher[5] }}" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editDepartment" class="form-label">Department</label>
+                                <select class="form-control" id="editDepartment" required>
+                                    <option value="CSD" {% if teacher[6] == 'CSD' %}selected{% endif %}>CSD</option>
+                                    <option value="CSIT" {% if teacher[6] == 'CSIT' %}selected{% endif %}>CSIT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editSection" class="form-label">Section</label>
+                                <input type="text" class="form-control" id="editSection" value="{{ teacher[7] }}" maxlength="1">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMobile" class="form-label">Mobile Number</label>
+                            <input type="tel" class="form-control" id="editMobile" value="{{ teacher[8] or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editEmail" value="{{ teacher[11] or '' }}" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for profile picture upload -->
+    <input type="file" id="profilePictureInput" accept="image/*" style="display: none;" onchange="uploadProfilePicture()">
+
 </div>
 {% endblock %}
 
@@ -419,6 +546,112 @@ function exportAttendance() {
 
 function printQRCode() {
     window.print();
+}
+
+// Profile management functions
+function showProfileModal() {
+    const modal = new bootstrap.Modal(document.getElementById('profileModal'));
+    modal.show();
+}
+
+function changeProfilePicture() {
+    document.getElementById('profilePictureInput').click();
+}
+
+function uploadProfilePicture() {
+    const input = document.getElementById('profilePictureInput');
+    const file = input.files[0];
+    
+    if (file) {
+        const formData = new FormData();
+        formData.append('profile_picture', file);
+        
+        fetch('/api/upload_profile_picture', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the profile image
+                const profileImage = document.getElementById('profileImage');
+                if (profileImage.tagName === 'IMG') {
+                    profileImage.src = data.image_url + '?t=' + new Date().getTime();
+                } else {
+                    // Replace div with img
+                    const newImg = document.createElement('img');
+                    newImg.id = 'profileImage';
+                    newImg.src = data.image_url;
+                    newImg.alt = 'Profile Picture';
+                    newImg.className = 'profile-image';
+                    newImg.style.cssText = 'width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff;';
+                    profileImage.parentNode.replaceChild(newImg, profileImage);
+                }
+                
+                // Show success message
+                const toast = document.createElement('div');
+                toast.className = 'toast-container position-fixed top-0 end-0 p-3';
+                toast.innerHTML = `
+                    <div class="toast show" role="alert">
+                        <div class="toast-header">
+                            <strong class="me-auto">Success</strong>
+                        </div>
+                        <div class="toast-body">
+                            Profile picture updated successfully!
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 3000);
+            } else {
+                alert('Error uploading image: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error uploading image');
+        });
+    }
+}
+
+function saveProfile() {
+    const formData = {
+        first_name: document.getElementById('editFirstName').value,
+        last_name: document.getElementById('editLastName').value,
+        subject: document.getElementById('editSubject').value,
+        department: document.getElementById('editDepartment').value,
+        section: document.getElementById('editSection').value,
+        mobile: document.getElementById('editMobile').value,
+        email: document.getElementById('editEmail').value
+    };
+    
+    fetch('/api/update_teacher_profile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('profileModal'));
+            modal.hide();
+            
+            // Show success message and reload
+            alert('Profile updated successfully!');
+            location.reload();
+        } else {
+            alert('Error updating profile: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating profile');
+    });
 }
 </script>
 {% endblock %}
