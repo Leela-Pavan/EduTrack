@@ -239,40 +239,40 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        email = request.form['email']
-        role = request.form['role']
-        
-        # Prevent admin registration through the form
-        if role == 'admin':
-            flash('Admin registration is not allowed. Admin account is pre-configured.', 'error')
-            return render_template('register.html')
-        
-        # Additional fields based on role
-        if role == 'student':
-            student_id = request.form['student_id']
-            first_name = request.form['first_name']
-            last_name = request.form['last_name']
-            department = request.form['department']  # Changed from class_name to department
-            section = request.form['section']  # Now required field
-            year = request.form['year']  # New field
-            mobile_number = request.form.get('mobile_number', '')
-            interests = request.form.get('interests', '')
-            strengths = request.form.get('strengths', '')
-            career_goals = request.form.get('career_goals', '')
-        elif role == 'teacher':
-            teacher_id = request.form['teacher_id']
-            first_name = request.form['first_name']
-            last_name = request.form['last_name']
-            subject = request.form['subject']
-            designation = request.form['designation']  # Changed from class_name to designation
-            mobile_number = request.form.get('mobile_number', '')
-        
-        conn = sqlite3.connect('school_system.db')
-        cursor = conn.cursor()
-        
         try:
+            username = request.form['username']
+            password = request.form['password']
+            email = request.form['email']
+            role = request.form['role']
+            
+            # Prevent admin registration through the form
+            if role == 'admin':
+                flash('Admin registration is not allowed. Admin account is pre-configured.', 'error')
+                return render_template('register.html')
+            
+            # Additional fields based on role
+            if role == 'student':
+                student_id = request.form['student_id']
+                first_name = request.form['first_name']
+                last_name = request.form['last_name']
+                department = request.form['department']  # Changed from class_name to department
+                section = request.form['section']  # Now required field
+                year = request.form['year']  # New field
+                mobile_number = request.form.get('mobile_number', '')
+                interests = request.form.get('interests', '')
+                strengths = request.form.get('strengths', '')
+                career_goals = request.form.get('career_goals', '')
+            elif role == 'teacher':
+                teacher_id = request.form['teacher_id']
+                first_name = request.form['first_name']
+                last_name = request.form['last_name']
+                subject = request.form['subject']
+                designation = request.form['designation']  # Changed from class_name to designation
+                mobile_number = request.form.get('mobile_number', '')
+            
+            conn = sqlite3.connect('school_system.db')
+            cursor = conn.cursor()
+            
             # Create user account with mobile number
             password_hash = generate_password_hash(password)
             cursor.execute('''INSERT INTO users (username, password_hash, role, email, mobile_number) 
@@ -283,14 +283,14 @@ def register():
             # Create role-specific profile
             if role == 'student':
                 cursor.execute('''INSERT INTO students (user_id, student_id, first_name, last_name, 
-                                 class_name, section, mobile_number, interests, strengths, career_goals) 
+                                 class_name, section, mobile, interests, strengths, career_goals) 
                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                              (user_id, student_id, first_name, last_name, f"{department}-{year}", section, 
                               mobile_number, interests, strengths, career_goals))
             elif role == 'teacher':
                 cursor.execute('''INSERT INTO teachers (user_id, teacher_id, first_name, last_name, 
-                                 subject, class_name, section) VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                             (user_id, teacher_id, first_name, last_name, subject, designation, 'N/A'))
+                                 subject, class_name, section, mobile) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                             (user_id, teacher_id, first_name, last_name, subject, designation, 'N/A', mobile_number))
             
             conn.commit()
             conn.close()
@@ -301,8 +301,116 @@ def register():
             conn.rollback()
             conn.close()
             flash('Username or email already exists', 'error')
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            flash(f'Registration failed: {str(e)}', 'error')
+            return render_template('register.html')
+        except KeyError as e:
+            flash(f'Missing required field: {str(e)}', 'error')
+            return render_template('register.html')
     
     return render_template('register.html')
+
+@app.route('/simple_register', methods=['GET', 'POST'])
+def simple_register():
+    if request.method == 'POST':
+        # Test with the same logic as register
+        return register()
+    return render_template('simple_register.html')
+
+@app.route('/test_teacher_registration')
+def test_teacher_registration():
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teacher Registration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 300px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .test-data { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Teacher Registration Test</h2>
+    
+    <div class="test-data">
+        <h3>Test Data Provided:</h3>
+        <p><strong>Username:</strong> Raju</p>
+        <p><strong>Email:</strong> raju@gmail.com</p>
+        <p><strong>Password:</strong> 2580</p>
+        <p><strong>Role:</strong> Teacher</p>
+        <p><strong>Subject:</strong> DLCO</p>
+        <p><strong>ID:</strong> 101</p>
+        <p><strong>Designation:</strong> Asst Prof</p>
+        <p><strong>Mobile:</strong> 9885618712</p>
+    </div>
+    
+    <form method="POST" action="/register">
+        <div class="form-group">
+            <label for="username">Username *</label>
+            <input type="text" id="username" name="username" value="Raju" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" value="raju@gmail.com" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password *</label>
+            <input type="password" id="password" name="password" value="2580" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="role">Role *</label>
+            <select id="role" name="role" required>
+                <option value="teacher" selected>Teacher</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="teacher_id">Teacher ID *</label>
+            <input type="text" id="teacher_id" name="teacher_id" value="101" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="first_name">First Name *</label>
+            <input type="text" id="first_name" name="first_name" value="Raju" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" value="">
+        </div>
+        
+        <div class="form-group">
+            <label for="subject">Subject *</label>
+            <input type="text" id="subject" name="subject" value="DLCO" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="designation">Designation *</label>
+            <select id="designation" name="designation" required>
+                <option value="Asst Prof" selected>Assistant Professor</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="mobile_number">Mobile Number</label>
+            <input type="tel" id="mobile_number" name="mobile_number" value="9885618712">
+        </div>
+        
+        <button type="submit">Register Teacher</button>
+    </form>
+</body>
+</html>
+    '''
 
 @app.route('/logout')
 def logout():
@@ -1053,6 +1161,64 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/debug/add_sample_timetable')
+def add_sample_timetable():
+    """Debug route to add sample timetable data for testing"""
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Check if teacher with ID 101 exists
+        cursor.execute('SELECT teacher_id FROM teachers WHERE teacher_id = ?', (101,))
+        teacher = cursor.fetchone()
+        
+        if not teacher:
+            return jsonify({'error': 'Teacher with ID 101 not found. Please register first.'}), 404
+        
+        # Get current day
+        from datetime import datetime
+        today = datetime.now().strftime('%A')
+        
+        # Clear existing timetable for this teacher
+        cursor.execute('DELETE FROM timetable WHERE teacher_id = ?', (101,))
+        
+        # Add sample timetable entries
+        timetable_data = [
+            (101, '11', 'A', today, 1, 'DLCO', '09:00', '10:00'),
+            (101, '11', 'B', today, 3, 'DLCO', '11:00', '12:00'),
+            (101, '12', 'A', today, 5, 'DLCO', '14:00', '15:00'),
+        ]
+        
+        cursor.executemany('''INSERT INTO timetable 
+                             (teacher_id, class_name, section, day_of_week, period_number, subject, start_time, end_time)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', timetable_data)
+        
+        # Add some classes for other days too
+        other_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        for day in other_days:
+            if day != today:
+                cursor.execute('''INSERT INTO timetable 
+                                 (teacher_id, class_name, section, day_of_week, period_number, subject, start_time, end_time)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', 
+                              (101, '11', 'A', day, 2, 'DLCO', '10:00', '11:00'))
+        
+        conn.commit()
+        
+        # Get total count
+        cursor.execute('SELECT COUNT(*) FROM timetable WHERE teacher_id = ?', (101,))
+        count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Added sample timetable data for teacher 101. Total classes: {count}',
+            'today': today
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     init_db()

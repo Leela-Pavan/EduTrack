@@ -4,8 +4,7 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class=                                                <button class="btn btn-primary btn-sm" 
-                                                        onclick="generateQRCode('{{ class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') }}', '{{ class_info[2] }}', '{{ class_info[5] }}', {{ class_info[4] }})">ow">
+    <div class="row">
         <!-- Left Sidebar -->
         <div class="col-md-3">
             <div class="card mb-4">
@@ -27,9 +26,19 @@
                             </div>
                         {% endif %}
                         <div class="mt-2">
-                            <button class="btn btn-sm btn-outline-primary" onclick="changeProfilePicture()">
-                                <i class="fas fa-camera me-1"></i>Change Photo
-                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="photoOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-camera me-1"></i>Change Photo
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="photoOptions">
+                                    <li><a class="dropdown-item" href="#" onclick="changeProfilePicture()">
+                                        <i class="fas fa-folder-open me-2"></i>Choose from Files
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="openCameraModal()">
+                                        <i class="fas fa-camera me-2"></i>Take Photo with Camera
+                                    </a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     <h6 class="card-title">{{ teacher[3] }} {{ teacher[4] }}</h6>
@@ -169,10 +178,10 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <h6>Class Information</h6>
-                                            <p><strong>Class:</strong>                                     <h5 class="mb-0">
-                                        {% set class_display = class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') %}
-                                        {{ class_display }}{{ class_info[2] }}
-                                    </h5></p>
+                                            <p><strong>Class:</strong>
+                                                {% set class_display = class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') %}
+                                                {{ class_display }}{{ class_info[2] }}
+                                            </p>
                                             <p><strong>Subject:</strong> {{ class_info[5] }}</p>
                                             <p><strong>Time:</strong> {{ class_info[6] }} - {{ class_info[7] }}</p>
                                         </div>
@@ -180,7 +189,7 @@
                                             <h6>Quick Actions</h6>
                                             <div class="d-grid gap-2">
                                                 <button class="btn btn-primary btn-sm" 
-                                                        onclick="generateQRCode('{{ class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') }}', '{{ class_info[2] }}', '{{ class_info[5] }}', {{ class_info[4] }})">>
+                                                        onclick="generateQRCode('{{ class_info[1]|replace('10', 'CSIT')|replace('11', 'CSD')|replace('12', 'CSE') }}', '{{ class_info[2] }}', '{{ class_info[5] }}', {{ class_info[4] }})">
                                                     <i class="fas fa-qrcode me-1"></i>Generate QR Code
                                                 </button>
                                                 <button class="btn btn-outline-primary btn-sm" 
@@ -370,6 +379,46 @@
                     <button type="button" class="btn btn-primary" onclick="saveProfile()">
                         <i class="fas fa-save me-1"></i>Save Changes
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Modal -->
+    <div class="modal fade" id="cameraModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-camera me-2"></i>Take Profile Photo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="camera-container mb-3">
+                        <video id="cameraVideo" width="400" height="300" autoplay style="border-radius: 10px; border: 2px solid #007bff;"></video>
+                        <canvas id="cameraCanvas" width="400" height="300" style="display: none;"></canvas>
+                    </div>
+                    <div class="camera-controls">
+                        <button class="btn btn-success me-2" id="captureBtn" onclick="capturePhoto()">
+                            <i class="fas fa-camera me-1"></i>Capture Photo
+                        </button>
+                        <button class="btn btn-warning me-2" id="retakeBtn" onclick="retakePhoto()" style="display: none;">
+                            <i class="fas fa-redo me-1"></i>Retake
+                        </button>
+                        <button class="btn btn-primary" id="usePhotoBtn" onclick="useProfilePhoto()" style="display: none;">
+                            <i class="fas fa-check me-1"></i>Use This Photo
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Make sure you're in good lighting for the best photo quality.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </div>
         </div>
@@ -653,6 +702,146 @@ function saveProfile() {
         alert('Error updating profile');
     });
 }
+
+// Camera functionality
+let cameraStream = null;
+
+function openCameraModal() {
+    const modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    modal.show();
+    
+    // Start camera when modal opens
+    startCamera();
+}
+
+async function startCamera() {
+    try {
+        const video = document.getElementById('cameraVideo');
+        const constraints = {
+            video: {
+                width: { ideal: 400 },
+                height: { ideal: 300 },
+                facingMode: 'user' // Front camera for selfies
+            }
+        };
+        
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = cameraStream;
+        
+        // Reset UI
+        document.getElementById('captureBtn').style.display = 'inline-block';
+        document.getElementById('retakeBtn').style.display = 'none';
+        document.getElementById('usePhotoBtn').style.display = 'none';
+        
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        alert('Unable to access camera. Please check permissions and try again.');
+    }
+}
+
+function capturePhoto() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const context = canvas.getContext('2d');
+    
+    // Draw the video frame to canvas
+    context.drawImage(video, 0, 0, 400, 300);
+    
+    // Hide video, show canvas with captured image
+    video.style.display = 'none';
+    canvas.style.display = 'block';
+    
+    // Update button visibility
+    document.getElementById('captureBtn').style.display = 'none';
+    document.getElementById('retakeBtn').style.display = 'inline-block';
+    document.getElementById('usePhotoBtn').style.display = 'inline-block';
+}
+
+function retakePhoto() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    
+    // Show video, hide canvas
+    video.style.display = 'block';
+    canvas.style.display = 'none';
+    
+    // Update button visibility
+    document.getElementById('captureBtn').style.display = 'inline-block';
+    document.getElementById('retakeBtn').style.display = 'none';
+    document.getElementById('usePhotoBtn').style.display = 'none';
+}
+
+function useProfilePhoto() {
+    const canvas = document.getElementById('cameraCanvas');
+    
+    // Convert canvas to blob
+    canvas.toBlob(function(blob) {
+        // Create form data
+        const formData = new FormData();
+        formData.append('profile_picture', blob, 'camera_photo.jpg');
+        
+        // Upload the photo
+        fetch('/api/upload_profile_picture', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the profile image
+                const profileImage = document.getElementById('profileImage');
+                if (profileImage.tagName === 'IMG') {
+                    profileImage.src = data.image_url + '?t=' + new Date().getTime();
+                } else {
+                    // Replace div with img
+                    const newImg = document.createElement('img');
+                    newImg.id = 'profileImage';
+                    newImg.src = data.image_url;
+                    newImg.alt = 'Profile Picture';
+                    newImg.className = 'profile-image';
+                    newImg.style.cssText = 'width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff;';
+                    profileImage.parentNode.replaceChild(newImg, profileImage);
+                }
+                
+                // Close modal and stop camera
+                stopCamera();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('cameraModal'));
+                modal.hide();
+                
+                alert('Profile picture updated successfully!');
+            } else {
+                alert('Error uploading photo: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error uploading photo');
+        });
+    }, 'image/jpeg', 0.8);
+}
+
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+}
+
+// Stop camera when modal is closed
+document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
+    stopCamera();
+    
+    // Reset UI
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    video.style.display = 'block';
+    canvas.style.display = 'none';
+    
+    document.getElementById('captureBtn').style.display = 'inline-block';
+    document.getElementById('retakeBtn').style.display = 'none';
+    document.getElementById('usePhotoBtn').style.display = 'none';
+});
+
 </script>
 {% endblock %}
 
