@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable Management - EduTrack</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/edutrack-theme.css') }}" rel="stylesheet">
+    <style>
+        .nav-pills .nav-link.active {
+            background-color: #0066cc;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-generate-timetable {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-generate-timetable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(255, 107, 107, 0.4);
+            color: white;
+        }
+        .constraint-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.85em;
+            margin: 2px;
+        }
+        .unavailable-day {
+            background-color: #ffebee;
+            border: 1px solid #ffcdd2;
+        }
+        .form-floating > label {
+            color: #666;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 102, 204, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-graduation-cap me-2"></i>EduTrack - Timetable Management
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-dashboard me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- EduTrack Header -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-cogs me-2 text-primary"></i>
+                    EduTrack Timetable Management System
+                </h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Configure teachers, subjects, classrooms, and student groups for automated scheduling • 
+                    <span class="badge bg-info">20 Periods/Week Max</span> • 
+                    <span class="badge bg-success">9:00 AM - 4:30 PM</span> • 
+                    <span class="badge bg-warning">Sat Half-day</span>
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('timetable_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-1"></i>View Dashboard
+                    </a>
+                    <button class="btn btn-generate-timetable" onclick="generateTimetable()">
+                        <i class="fas fa-magic me-1"></i>Generate Timetable
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Row -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center border-primary">
+                    <div class="card-body">
+                        <i class="fas fa-chalkboard-teacher fa-2x text-primary mb-2"></i>
+                        <h5 class="card-title">{{ stats.teachers or 0 }}</h5>
+                        <p class="card-text text-muted">Teachers</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center border-success">
+                    <div class="card-body">
+                        <i class="fas fa-book fa-2x text-success mb-2"></i>
+                        <h5 class="card-title">{{ stats.subjects or 0 }}</h5>
+                        <p class="card-text text-muted">Subjects</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center border-warning">
+                    <div class="card-body">
+                        <i class="fas fa-door-open fa-2x text-warning mb-2"></i>
+                        <h5 class="card-title">{{ stats.classrooms or 0 }}</h5>
+                        <p class="card-text text-muted">Classrooms</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center border-info">
+                    <div class="card-body">
+                        <i class="fas fa-users fa-2x text-info mb-2"></i>
+                        <h5 class="card-title">{{ stats.student_groups or 0 }}</h5>
+                        <p class="card-text text-muted">Student Groups</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generation Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-magic me-2"></i>Automated Timetable Generation
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="text-primary">Generate Conflict-Free Timetable</h6>
+                                <p class="text-muted mb-2">
+                                    Automatically create optimized schedules based on all constraints and requirements.
+                                    The system will ensure no conflicts between teachers, rooms, and student groups.
+                                </p>
+                                <div class="d-flex flex-wrap">
+                                    <span class="constraint-badge">
+                                        <i class="fas fa-check-circle me-1"></i>No Double Booking
+                                    </span>
+                                    <span class="constraint-badge">
+                                        <i class="fas fa-user-check me-1"></i>Teacher Availability
+                                    </span>
+                                    <span class="constraint-badge">
+                                        <i class="fas fa-door-open me-1"></i>Room Capacity Match
+                                    </span>
+                                    <span class="constraint-badge">
+                                        <i class="fas fa-clock me-1"></i>Weekly Hour Limits
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button type="button" class="btn btn-generate-timetable" onclick="generateTimetable()">
+                                    <i class="fas fa-cogs me-2"></i>Generate Timetable
+                                </button>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>Last generated: {{ last_generation or 'Never' }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Management Tabs -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-pills" id="managementTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="teachers-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#teachers" type="button" role="tab">
+                                    <i class="fas fa-chalkboard-teacher me-1"></i>Teachers
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="subjects-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#subjects" type="button" role="tab">
+                                    <i class="fas fa-book me-1"></i>Subjects
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="classrooms-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#classrooms" type="button" role="tab">
+                                    <i class="fas fa-door-open me-1"></i>Classrooms
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="groups-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#groups" type="button" role="tab">
+                                    <i class="fas fa-users me-1"></i>Student Groups
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="managementTabsContent">
+                            
+                            <!-- Teachers Tab -->
+                            <div class="tab-pane fade show active" id="teachers" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="text-primary mb-0">
+                                        <i class="fas fa-chalkboard-teacher me-1"></i>Teacher Management
+                                    </h6>
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" 
+                                            data-bs-target="#addTeacherModal">
+                                        <i class="fas fa-plus me-1"></i>Add Teacher
+                                    </button>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Code</th>
+                                                <th>Name</th>
+                                                <th>Qualifications</th>
+                                                <th>Max Hours/Week</th>
+                                                <th>Unavailability</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="teachersTableBody">
+                                            <!-- Teachers will be loaded here via JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Subjects Tab -->
+                            <div class="tab-pane fade" id="subjects" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="text-success mb-0">
+                                        <i class="fas fa-book me-1"></i>Subject Management
+                                    </h6>
+                                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" 
+                                            data-bs-target="#addSubjectModal">
+                                        <i class="fas fa-plus me-1"></i>Add Subject
+                                    </button>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Code</th>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Weekly Hours</th>
+                                                <th>Room Requirements</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="subjectsTableBody">
+                                            <!-- Subjects will be loaded here via JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Classrooms Tab -->
+                            <div class="tab-pane fade" id="classrooms" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="text-warning mb-0">
+                                        <i class="fas fa-door-open me-1"></i>Classroom Management
+                                    </h6>
+                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" 
+                                            data-bs-target="#addClassroomModal">
+                                        <i class="fas fa-plus me-1"></i>Add Classroom
+                                    </button>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Room Number</th>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Capacity</th>
+                                                <th>Facilities</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="classroomsTableBody">
+                                            <!-- Classrooms will be loaded here via JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Student Groups Tab -->
+                            <div class="tab-pane fade" id="groups" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="text-info mb-0">
+                                        <i class="fas fa-users me-1"></i>Student Group Management
+                                    </h6>
+                                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" 
+                                            data-bs-target="#addGroupModal">
+                                        <i class="fas fa-plus me-1"></i>Add Student Group
+                                    </button>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Code</th>
+                                                <th>Name</th>
+                                                <th>Year/Semester</th>
+                                                <th>Students</th>
+                                                <th>Coordinator</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="groupsTableBody">
+                                            <!-- Student groups will be loaded here via JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Teacher Modal -->
+    <div class="modal fade" id="addTeacherModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Add Teacher
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addTeacherForm" onsubmit="submitTeacher(event)">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="teacherCode" name="teacher_code" required>
+                                    <label>Teacher Code (e.g., T001)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="email" class="form-control" id="teacherEmail" name="email" required>
+                                    <label>Email Address</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="teacherFirstName" name="first_name" required>
+                                    <label>First Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="teacherLastName" name="last_name" required>
+                                    <label>Last Name</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="tel" class="form-control" id="teacherPhone" name="phone">
+                                    <label>Phone Number</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="maxHours" name="max_hours" value="40" min="1" max="60">
+                                    <label>Max Hours per Week</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Subject Qualifications</label>
+                            <div class="border p-3 rounded">
+                                <div class="row" id="subjectQualifications">
+                                    <!-- Will be populated with checkboxes for each subject -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Weekly Unavailability</label>
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="mondayUnavailable">
+                                        <label class="form-check-label">Monday</label>
+                                    </div>
+                                    <select class="form-select form-select-sm mt-1" id="mondaySlots" disabled>
+                                        <option value="all_day">All Day</option>
+                                        <option value="morning">Morning (9-12)</option>
+                                        <option value="afternoon">Afternoon (2-5)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="tuesdayUnavailable">
+                                        <label class="form-check-label">Tuesday</label>
+                                    </div>
+                                    <select class="form-select form-select-sm mt-1" id="tuesdaySlots" disabled>
+                                        <option value="all_day">All Day</option>
+                                        <option value="morning">Morning (9-12)</option>
+                                        <option value="afternoon">Afternoon (2-5)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="wednesdayUnavailable">
+                                        <label class="form-check-label">Wednesday</label>
+                                    </div>
+                                    <select class="form-select form-select-sm mt-1" id="wednesdaySlots" disabled>
+                                        <option value="all_day">All Day</option>
+                                        <option value="morning">Morning (9-12)</option>
+                                        <option value="afternoon">Afternoon (2-5)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="thursdayUnavailable">
+                                        <label class="form-check-label">Thursday</label>
+                                    </div>
+                                    <select class="form-select form-select-sm mt-1" id="thursdaySlots" disabled>
+                                        <option value="all_day">All Day</option>
+                                        <option value="morning">Morning (9-12)</option>
+                                        <option value="afternoon">Afternoon (2-5)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="fridayUnavailable">
+                                        <label class="form-check-label">Friday</label>
+                                    </div>
+                                    <select class="form-select form-select-sm mt-1" id="fridaySlots" disabled>
+                                        <option value="all_day">All Day</option>
+                                        <option value="morning">Morning (9-12)</option>
+                                        <option value="afternoon">Afternoon (2-5)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="saturdayUnavailable">
+                                        <label class="form-check-label">Saturday</label>
+                                    </div>
+                                    <select class="form-select form-select-sm mt-1" id="saturdaySlots" disabled>
+                                        <option value="all_day">All Day</option>
+                                        <option value="morning">Morning (9-12)</option>
+                                        <option value="afternoon">Afternoon (2-5)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Teacher
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Subject Modal -->
+    <div class="modal fade" id="addSubjectModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-book me-2"></i>Add Subject
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addSubjectForm" onsubmit="submitSubject(event)">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="subjectCode" name="subject_code" required>
+                                    <label>Subject Code (e.g., CS101)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="subjectType" name="subject_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="theory">Theory</option>
+                                        <option value="practical">Practical</option>
+                                        <option value="lab">Laboratory</option>
+                                        <option value="tutorial">Tutorial</option>
+                                    </select>
+                                    <label>Subject Type</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="subjectName" name="subject_name" required>
+                            <label>Subject Name</label>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="lectureHours" name="lecture_hours" value="0" min="0" max="10">
+                                    <label>Lecture Hours/Week</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="labHours" name="lab_hours" value="0" min="0" max="10">
+                                    <label>Lab Hours/Week</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="tutorialHours" name="tutorial_hours" value="0" min="0" max="10">
+                                    <label>Tutorial Hours/Week</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="specialRoom" name="special_room">
+                                        <option value="">No Special Requirement</option>
+                                        <option value="computer_lab">Computer Lab</option>
+                                        <option value="science_lab">Science Lab</option>
+                                        <option value="auditorium">Auditorium</option>
+                                        <option value="workshop">Workshop</option>
+                                    </select>
+                                    <label>Special Room Requirement</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="minCapacity" name="min_capacity" value="30" min="1" max="200">
+                                    <label>Minimum Room Capacity</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <textarea class="form-control" id="subjectDescription" name="description" style="height: 100px"></textarea>
+                            <label>Description</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i>Save Subject
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Classroom Modal -->
+    <div class="modal fade" id="addClassroomModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-door-open me-2"></i>Add Classroom
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addClassroomForm" onsubmit="submitClassroom(event)">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="roomNumber" name="room_number" required>
+                                    <label>Room Number</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="roomName" name="room_name" required>
+                                    <label>Room Name</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="roomType" name="room_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="lecture_hall">Lecture Hall</option>
+                                        <option value="computer_lab">Computer Lab</option>
+                                        <option value="science_lab">Science Lab</option>
+                                        <option value="tutorial_room">Tutorial Room</option>
+                                        <option value="auditorium">Auditorium</option>
+                                        <option value="workshop">Workshop</option>
+                                    </select>
+                                    <label>Room Type</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="seatingCapacity" name="seating_capacity" required min="1" max="500">
+                                    <label>Seating Capacity</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="floorNumber" name="floor_number" min="0" max="20">
+                                    <label>Floor Number</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="buildingName" name="building_name">
+                                    <label>Building Name</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Facilities Available</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="projectorAvailable" name="facilities" value="projector">
+                                        <label class="form-check-label">Projector</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="whiteboardAvailable" name="facilities" value="whiteboard">
+                                        <label class="form-check-label">Whiteboard</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="airConditioned" name="facilities" value="ac">
+                                        <label class="form-check-label">Air Conditioned</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="computersAvailable" name="facilities" value="computers">
+                                        <label class="form-check-label">Computers</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="internetAccess" name="facilities" value="internet">
+                                        <label class="form-check-label">Internet Access</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="soundSystem" name="facilities" value="sound">
+                                        <label class="form-check-label">Sound System</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-1"></i>Save Classroom
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Group Modal -->
+    <div class="modal fade" id="addGroupModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-users me-2"></i>Add Student Group
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addGroupForm" onsubmit="submitGroup(event)">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="groupCode" name="group_code" required>
+                                    <label>Group Code (e.g., CSIT-A)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="studentCount" name="student_count" required min="1" max="200">
+                                    <label>Number of Students</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="groupName" name="group_name" required>
+                            <label>Group Name</label>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="academicYear" name="academic_year" value="2024-25" required>
+                                    <label>Academic Year</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="semester" name="semester" required>
+                                        <option value="">Select Semester</option>
+                                        <option value="1">Semester 1</option>
+                                        <option value="2">Semester 2</option>
+                                        <option value="3">Semester 3</option>
+                                        <option value="4">Semester 4</option>
+                                        <option value="5">Semester 5</option>
+                                        <option value="6">Semester 6</option>
+                                        <option value="7">Semester 7</option>
+                                        <option value="8">Semester 8</option>
+                                    </select>
+                                    <label>Semester</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="coordinatorTeacher" name="coordinator_teacher">
+                                <option value="">Select Coordinator (Optional)</option>
+                                <!-- Will be populated with teachers -->
+                            </select>
+                            <label>Coordinator Teacher</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-save me-1"></i>Save Group
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h6 id="loadingMessage">Processing...</h6>
+                    <p class="text-muted small mb-0" id="loadingDescription">Please wait while we process your request.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/timetable-management.js') }}"></script>
+    
+    <script>
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            
+            // Set up unavailability day checkboxes
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            days.forEach(day => {
+                const checkbox = document.getElementById(day + 'Unavailable');
+                const select = document.getElementById(day + 'Slots');
+                
+                if (checkbox && select) {
+                    checkbox.addEventListener('change', function() {
+                        select.disabled = !this.checked;
+                        if (!this.checked) {
+                            select.value = 'all_day';
+                        }
+                    });
+                }
+            });
+        });
+        
+        function loadAllData() {
+            loadTeachers();
+            loadSubjects();
+            loadClassrooms();
+            loadStudentGroups();
+        }
+        
+        // These functions will be implemented in the JavaScript file
+        function loadTeachers() {
+            // Implementation in timetable-management.js
+        }
+        
+        function loadSubjects() {
+            // Implementation in timetable-management.js
+        }
+        
+        function loadClassrooms() {
+            // Implementation in timetable-management.js
+        }
+        
+        function loadStudentGroups() {
+            // Implementation in timetable-management.js
+        }
+        
+        function generateTimetable() {
+            // Implementation in timetable-management.js
+        }
+        
+        function submitTeacher(event) {
+            // Implementation in timetable-management.js
+        }
+        
+        function submitSubject(event) {
+            // Implementation in timetable-management.js
+        }
+        
+        function submitClassroom(event) {
+            // Implementation in timetable-management.js
+        }
+        
+        function submitGroup(event) {
+            // Implementation in timetable-management.js
+        }
+    </script>
+</body>
+</html>

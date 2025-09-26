@@ -1,0 +1,679 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Schedule - EduTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-calendar-alt me-2 text-info"></i>Schedule Management
+                    </h1>
+                    <p class="text-muted">Create and manage timetables for classes and teachers</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                        <i class="fas fa-plus me-1"></i>Add Schedule
+                    </button>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkScheduleModal">
+                        <i class="fas fa-upload me-1"></i>Bulk Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title mb-3">Quick Actions</h6>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="viewCurrentSchedules()">
+                            <i class="fas fa-eye me-1"></i>View All Schedules
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="showTeacherSchedules()">
+                            <i class="fas fa-chalkboard-teacher me-1"></i>Teacher Schedules
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" onclick="checkScheduleConflicts()">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Check Conflicts
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="generateScheduleReport()">
+                            <i class="fas fa-file-download me-1"></i>Generate Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Timetables -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="classTabs" role="tablist">
+                        {% set first_tab = true %}
+                        {% for class_info in classes %}
+                            {% for section in class_info.sections %}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {% if first_tab %}active{% set first_tab = false %}{% endif %}" 
+                                            id="{{ class_info.name }}-{{ section }}-tab" 
+                                            data-bs-toggle="tab" 
+                                            data-bs-target="#{{ class_info.name }}-{{ section }}" 
+                                            type="button" 
+                                            role="tab">
+                                        {{ class_info.name }}-{{ section }}
+                                    </button>
+                                </li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="classTabsContent">
+                        {% set first_content = true %}
+                        {% for class_info in classes %}
+                            {% for section in class_info.sections %}
+                                <div class="tab-pane fade {% if first_content %}show active{% set first_content = false %}{% endif %}" 
+                                     id="{{ class_info.name }}-{{ section }}" 
+                                     role="tabpanel">
+                                    <h5 class="text-primary mb-3">{{ class_info.name }}-{{ section }} Timetable</h5>
+                                    
+                                    <!-- Timetable Grid -->
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered timetable-grid">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th width="80">Period</th>
+                                                    {% for day in days %}
+                                                        <th>{{ day }}</th>
+                                                    {% endfor %}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for period in periods %}
+                                                    <tr>
+                                                        <td class="fw-bold text-center">
+                                                            {{ period.number }}<br>
+                                                            <small class="text-muted">{{ period.time }}</small>
+                                                        </td>
+                                                        {% for day in days %}
+                                                            <td class="schedule-cell" 
+                                                                data-class="{{ class_info.name }}-{{ section }}"
+                                                                data-day="{{ day }}"
+                                                                data-period="{{ period.number }}"
+                                                                onclick="editScheduleCell(this)">
+                                                                <div class="schedule-content">
+                                                                    <span class="subject">-</span>
+                                                                    <small class="teacher text-muted d-block">-</small>
+                                                                </div>
+                                                            </td>
+                                                        {% endfor %}
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Schedule Modal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Schedule Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addScheduleForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Class</label>
+                            <select class="form-select" id="scheduleClass" required>
+                                {% for class_info in classes %}
+                                    {% for section in class_info.sections %}
+                                        <option value="{{ class_info.name }}-{{ section }}">{{ class_info.name }}-{{ section }}</option>
+                                    {% endfor %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Day</label>
+                            <select class="form-select" id="scheduleDay" required>
+                                {% for day in days %}
+                                    <option value="{{ day }}">{{ day }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Period</label>
+                            <select class="form-select" id="schedulePeriod" required>
+                                {% for period in periods %}
+                                    <option value="{{ period.number }}">Period {{ period.number }} ({{ period.time }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="scheduleSubject" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teacher</label>
+                            <select class="form-select" id="scheduleTeacher" required>
+                                <option value="">Select Teacher</option>
+                                {% for teacher in teachers %}
+                                    <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Room (Optional)</label>
+                            <input type="text" class="form-control" id="scheduleRoom">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveSchedule()">Save Schedule</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Schedule Modal -->
+<div class="modal fade" id="bulkScheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Schedule Upload</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkScheduleForm">
+                    <div class="mb-3">
+                        <label class="form-label">Select Class</label>
+                        <select class="form-select" id="bulkClass" required>
+                            {% for class_info in classes %}
+                                {% for section in class_info.sections %}
+                                    <option value="{{ class_info.name }}-{{ section }}">{{ class_info.name }}-{{ section }}</option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Upload CSV File</label>
+                        <input type="file" class="form-control" id="bulkFile" accept=".csv" required>
+                        <div class="form-text">
+                            <strong>CSV format required:</strong> Day, Period, Subject, Teacher, Room<br>
+                            <small class="text-muted">
+                                Example: Monday,1,Mathematics,Chaitanya,Room-101<br>
+                                Days: Monday, Tuesday, Wednesday, Thursday, Friday<br>
+                                Periods: 1, 2, 3, 4, 5, 6, 7, 8<br>
+                                Teacher: Use teacher name or username
+                            </small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="replaceExisting">
+                            <label class="form-check-label" for="replaceExisting">
+                                Replace existing schedules for this class
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="uploadBulkSchedule()">Upload</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher Schedules Modal -->
+<div class="modal fade" id="teacherSchedulesModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Teacher Schedules</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <select class="form-select" id="teacherSelect" onchange="loadTeacherSchedule()">
+                            <option value="">Select Teacher</option>
+                            {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div id="teacherScheduleContent">
+                    <p class="text-muted">Select a teacher to view their schedule</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Conflicts Modal -->
+<div class="modal fade" id="conflictsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule Conflicts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="conflictsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Schedule Management JavaScript
+let currentEditCell = null;
+let scheduleData = {};
+
+// Load existing schedules on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllSchedules();
+    loadTeachers(); // Load teachers for dropdowns
+});
+
+// Load all schedules from the server
+function loadAllSchedules() {
+    fetch('/api/schedules')
+        .then(response => response.json())
+        .then(data => {
+            // Convert array to key-value object expected by the frontend
+            scheduleData = {};
+            if (Array.isArray(data)) {
+                data.forEach(schedule => {
+                    const key = `${schedule.class_name}-${schedule.section}-${schedule.day_of_week}-${schedule.period_number}`;
+                    scheduleData[key] = schedule;
+                });
+            }
+            updateScheduleDisplay();
+        })
+        .catch(error => {
+            console.error('Error loading schedules:', error);
+            showAlert('Error loading schedules', 'danger');
+        });
+}
+
+// Load teachers for dropdown menus
+function loadTeachers() {
+    fetch('/api/teachers')
+        .then(response => response.json())
+        .then(teachers => {
+            populateTeacherDropdowns(teachers);
+        })
+        .catch(error => {
+            console.error('Error loading teachers:', error);
+            showAlert('Error loading teachers', 'danger');
+        });
+}
+
+// Populate teacher dropdown menus
+function populateTeacherDropdowns(teachers) {
+    // Populate the schedule teacher dropdown
+    const scheduleTeacherSelect = document.getElementById('scheduleTeacher');
+    if (scheduleTeacherSelect) {
+        // Clear existing options except the first "Select Teacher" option
+        scheduleTeacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+        
+        // Add teacher options
+        teachers.forEach(teacher => {
+            const option = document.createElement('option');
+            option.value = teacher.teacher_id;
+            option.textContent = teacher.name;
+            scheduleTeacherSelect.appendChild(option);
+        });
+    }
+    
+    // Populate the teacher schedule view dropdown
+    const teacherSelect = document.getElementById('teacherSelect');
+    if (teacherSelect) {
+        // Clear existing options except the first "Select Teacher" option
+        teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+        
+        // Add teacher options
+        teachers.forEach(teacher => {
+            const option = document.createElement('option');
+            option.value = teacher.teacher_id;
+            option.textContent = teacher.name;
+            teacherSelect.appendChild(option);
+        });
+    }
+}
+
+// Update the schedule display in the UI
+function updateScheduleDisplay() {
+    document.querySelectorAll('.schedule-cell').forEach(cell => {
+        const className = cell.dataset.class;
+        const day = cell.dataset.day;
+        const period = cell.dataset.period;
+        
+        const key = `${className}-${day}-${period}`;
+        const schedule = scheduleData[key];
+        
+        if (schedule) {
+            cell.querySelector('.subject').textContent = schedule.subject;
+            cell.querySelector('.teacher').textContent = schedule.teacher_name || 'Unknown';
+            cell.classList.add('has-schedule');
+        } else {
+            cell.querySelector('.subject').textContent = '-';
+            cell.querySelector('.teacher').textContent = '-';
+            cell.classList.remove('has-schedule');
+        }
+    });
+}
+
+// Edit a schedule cell
+function editScheduleCell(cell) {
+    currentEditCell = cell;
+    
+    // Pre-fill the form with current data
+    document.getElementById('scheduleClass').value = cell.dataset.class;
+    document.getElementById('scheduleDay').value = cell.dataset.day;
+    document.getElementById('schedulePeriod').value = cell.dataset.period;
+    
+    const key = `${cell.dataset.class}-${cell.dataset.day}-${cell.dataset.period}`;
+    const schedule = scheduleData[key];
+    
+    if (schedule) {
+        document.getElementById('scheduleSubject').value = schedule.subject;
+        document.getElementById('scheduleTeacher').value = schedule.teacher_id;
+        document.getElementById('scheduleRoom').value = schedule.room || '';
+    }
+    
+    // Show the modal
+    new bootstrap.Modal(document.getElementById('addScheduleModal')).show();
+}
+
+// Save schedule
+function saveSchedule() {
+    const formData = {
+        class_name: document.getElementById('scheduleClass').value.split('-')[0],
+        section: document.getElementById('scheduleClass').value.split('-')[1],
+        day_of_week: document.getElementById('scheduleDay').value,
+        period_number: document.getElementById('schedulePeriod').value,
+        subject: document.getElementById('scheduleSubject').value,
+        teacher_id: document.getElementById('scheduleTeacher').value,
+        room: document.getElementById('scheduleRoom').value
+    };
+    
+    fetch('/api/schedule', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Schedule saved successfully', 'success');
+            loadAllSchedules(); // Reload schedules
+            bootstrap.Modal.getInstance(document.getElementById('addScheduleModal')).hide();
+            document.getElementById('addScheduleForm').reset();
+        } else {
+            showAlert(data.message || 'Error saving schedule', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving schedule:', error);
+        showAlert('Error saving schedule', 'danger');
+    });
+}
+
+// Upload bulk schedule
+function uploadBulkSchedule() {
+    const fileInput = document.getElementById('bulkFile');
+    const classValue = document.getElementById('bulkClass').value;
+    const replaceExisting = document.getElementById('replaceExisting').checked;
+    
+    if (!fileInput.files[0]) {
+        showAlert('Please select a CSV file', 'warning');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('class_name', classValue.split('-')[0]);
+    formData.append('section', classValue.split('-')[1]);
+    formData.append('replace_existing', replaceExisting);
+    
+    fetch('/api/bulk-schedule', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(`Bulk upload successful: ${data.imported} schedules imported`, 'success');
+            loadAllSchedules();
+            bootstrap.Modal.getInstance(document.getElementById('bulkScheduleModal')).hide();
+            document.getElementById('bulkScheduleForm').reset();
+        } else {
+            showAlert(data.message || 'Error uploading schedules', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error uploading schedules:', error);
+        showAlert('Error uploading schedules', 'danger');
+    });
+}
+
+// View current schedules
+function viewCurrentSchedules() {
+    window.open('/api/schedule-report', '_blank');
+}
+
+// Show teacher schedules
+function showTeacherSchedules() {
+    new bootstrap.Modal(document.getElementById('teacherSchedulesModal')).show();
+}
+
+// Load teacher schedule
+function loadTeacherSchedule() {
+    const teacherId = document.getElementById('teacherSelect').value;
+    const content = document.getElementById('teacherScheduleContent');
+    
+    if (!teacherId) {
+        content.innerHTML = '<p class="text-muted">Select a teacher to view their schedule</p>';
+        return;
+    }
+    
+    content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+    
+    fetch(`/api/teacher-schedules/${teacherId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayTeacherSchedule(data.schedules);
+            } else {
+                content.innerHTML = '<p class="text-danger">Error loading teacher schedule</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading teacher schedule:', error);
+            content.innerHTML = '<p class="text-danger">Error loading teacher schedule</p>';
+        });
+}
+
+// Display teacher schedule
+function displayTeacherSchedule(schedules) {
+    const content = document.getElementById('teacherScheduleContent');
+    
+    if (schedules.length === 0) {
+        content.innerHTML = '<p class="text-muted">No schedules found for this teacher</p>';
+        return;
+    }
+    
+    let html = '<div class="table-responsive"><table class="table table-bordered"><thead class="table-dark"><tr><th>Day</th><th>Period</th><th>Time</th><th>Class</th><th>Subject</th></tr></thead><tbody>';
+    
+    schedules.forEach(schedule => {
+        html += `<tr>
+            <td>${schedule.day_of_week}</td>
+            <td>${schedule.period_number}</td>
+            <td>${schedule.start_time} - ${schedule.end_time}</td>
+            <td>${schedule.class_name}-${schedule.section}</td>
+            <td>${schedule.subject}</td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table></div>';
+    content.innerHTML = html;
+}
+
+// Check schedule conflicts
+function checkScheduleConflicts() {
+    const modal = new bootstrap.Modal(document.getElementById('conflictsModal'));
+    modal.show();
+    
+    fetch('/api/schedule-conflicts')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayConflicts(data.conflicts);
+            } else {
+                document.getElementById('conflictsContent').innerHTML = '<p class="text-danger">Error checking conflicts</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking conflicts:', error);
+            document.getElementById('conflictsContent').innerHTML = '<p class="text-danger">Error checking conflicts</p>';
+        });
+}
+
+// Display conflicts
+function displayConflicts(conflicts) {
+    const content = document.getElementById('conflictsContent');
+    
+    if (conflicts.length === 0) {
+        content.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>No conflicts found!</div>';
+        return;
+    }
+    
+    let html = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Found ' + conflicts.length + ' conflict(s)</div>';
+    html += '<div class="list-group">';
+    
+    conflicts.forEach(conflict => {
+        html += `<div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Teacher: ${conflict.teacher_name}</h6>
+                <small>${conflict.day_of_week}</small>
+            </div>
+            <p class="mb-1">Period ${conflict.period_number} - Multiple classes assigned</p>
+            <small>Classes: ${conflict.classes.join(', ')}</small>
+        </div>`;
+    });
+    
+    html += '</div>';
+    content.innerHTML = html;
+}
+
+// Generate schedule report
+function generateScheduleReport() {
+    window.open('/api/schedule-report', '_blank');
+}
+
+// Show alert messages
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+
+<style>
+.schedule-cell {
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-height: 60px;
+    vertical-align: middle;
+}
+
+.schedule-cell:hover {
+    background-color: #f8f9fa;
+}
+
+.schedule-cell.has-schedule {
+    background-color: #e3f2fd;
+}
+
+.schedule-cell.has-schedule:hover {
+    background-color: #bbdefb;
+}
+
+.schedule-content {
+    text-align: center;
+    padding: 5px;
+}
+
+.timetable-grid {
+    font-size: 0.9rem;
+}
+
+.timetable-grid th,
+.timetable-grid td {
+    border: 1px solid #dee2e6;
+    text-align: center;
+}
+
+.table th {
+    border-top: none;
+}
+
+.card-header-tabs {
+    margin-bottom: -1rem;
+}
+
+.card-header-tabs .nav-link {
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+}
+</style>
+{% endblock %}

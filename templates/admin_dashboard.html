@@ -116,6 +116,124 @@
         </div>
     </div>
 
+    <!-- Password Information Panel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-key me-2"></i>Reset Password Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" role="alert">
+                        <h6><i class="fas fa-info-circle me-2"></i>Password Reset Status</h6>
+                        <p class="mb-2">All user passwords have been reset to a standardized format for easier access:</p>
+                        <ul class="mb-3">
+                            <li><strong>Students & Teachers:</strong> <code>[username in lowercase] + "123"</code></li>
+                            <li><strong>Admin:</strong> <code>admin123</code></li>
+                        </ul>
+                        <p class="mb-0"><small><i class="fas fa-lightbulb me-1"></i>You can view and copy individual passwords from the user management modals above.</small></p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-graduation-cap me-1"></i>Student Credentials Summary
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Password</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Pavan</td><td><code>pavan123</code></td></tr>
+                                        <tr><td>Deepanvitha</td><td><code>deepanvitha123</code></td></tr>
+                                        <tr><td>sarvani</td><td><code>sarvani123</code></td></tr>
+                                        <tr><td>Purna</td><td><code>purna123</code></td></tr>
+                                        <tr><td>OG</td><td><code>og123</code></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success mb-3">
+                                <i class="fas fa-chalkboard-teacher me-1"></i>Teacher Credentials Summary
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Password</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Chaithu</td><td><code>chaithu123</code></td></tr>
+                                        <tr><td>Aneela</td><td><code>aneela123</code></td></tr>
+                                        <tr><td>Krishnaveni</td><td><code>krishnaveni123</code></td></tr>
+                                        <tr><td>Praveen</td><td><code>praveen123</code></td></tr>
+                                        <tr><td>Tulasi</td><td><code>tulasi123</code></td></tr>
+                                        <tr><td>Suresh</td><td><code>suresh123</code></td></tr>
+                                        <tr><td>Gopala Krishna</td><td><code>gopalakrishna123</code></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Management Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Schedule Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-info">
+                                <i class="fas fa-robot me-1"></i>Automated Timetable System
+                            </h6>
+                            <p class="text-muted small mb-3">AI-powered scheduling for 4 sections (CSIT-A/B, CSD-A/B) with 20 periods/teacher/week limit. Schedule: 9:00 AM - 4:30 PM, Saturday half-day.</p>
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button type="button" class="btn btn-info me-md-2" onclick="window.location.href='/admin/timetable/management'">
+                                    <i class="fas fa-cogs me-1"></i>Manage System
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="window.location.href='/admin/timetable/dashboard'">
+                                    <i class="fas fa-th-large me-1"></i>Dashboard
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">
+                                <i class="fas fa-user-clock me-1"></i>Schedule Analytics
+                            </h6>
+                            <p class="text-muted small mb-3">View comprehensive analytics, teacher workloads, room utilization, and automated conflict detection.</p>
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button type="button" class="btn btn-warning me-md-2" onclick="window.location.href='/admin/timetable/dashboard?view=analytics'">
+                                    <i class="fas fa-chart-line me-1"></i>Analytics
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" onclick="window.location.href='/admin/timetable/dashboard?view=conflicts'">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>View Conflicts
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Attendance Analytics -->
         <div class="col-lg-8 mb-4">
@@ -580,6 +698,9 @@ function showAllStudents() {
                                 <button class="btn btn-sm btn-outline-secondary ms-1" onclick="togglePassword(this)" title="Show/Hide Password">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                <button class="btn btn-sm btn-outline-primary ms-1" onclick="copyPassword('${student.password || 'Not set'}')" title="Copy Password">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                         </td>
                         <td>
@@ -668,6 +789,7 @@ function showAllStudents() {
                                 <th>Department</th>
                                 <th>Section</th>
                                 <th>Email</th>
+                                <th>Username</th>
                                 <th>Password</th>
                                 <th>Actions</th>
                             </tr>
@@ -848,12 +970,16 @@ function showAllTeachers() {
                         <td>${teacher.department}</td>
                         <td>${teacher.section}</td>
                         <td>${teacher.email}</td>
+                        <td>${teacher.username || 'Not set'}</td>
                         <td>
                             <div class="password-cell">
                                 <span class="password-hidden" style="display: none;">${teacher.password || 'Not set'}</span>
                                 <span class="password-masked">••••••••</span>
                                 <button class="btn btn-sm btn-outline-secondary ms-1" onclick="togglePassword(this)" title="Show/Hide Password">
                                     <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary ms-1" onclick="copyPassword('${teacher.password || 'Not set'}')" title="Copy Password">
+                                    <i class="fas fa-copy"></i>
                                 </button>
                             </div>
                         </td>
@@ -905,6 +1031,39 @@ function togglePassword(button) {
     }
 }
 
+// Function to copy password to clipboard
+function copyPassword(password) {
+    if (password && password !== 'Not set') {
+        navigator.clipboard.writeText(password).then(function() {
+            // Show success toast
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-check me-2"></i>Password copied to clipboard!
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+            
+            // Remove toast after it's hidden
+            toast.addEventListener('hidden.bs.toast', function() {
+                document.body.removeChild(toast);
+            });
+        }).catch(function(err) {
+            alert('Failed to copy password: ' + err);
+        });
+    } else {
+        alert('No password available to copy');
+    }
+}
+
 // Function to show add student modal
 function showAddStudentModal() {
     const modal = new bootstrap.Modal(document.getElementById('addStudentModal'));
@@ -917,17 +1076,38 @@ function showAddTeacherModal() {
     modal.show();
 }
 
-// Function to add student
+// Function to add student with enhanced validation
 function addStudent() {
+    console.log('Starting addStudent function...');
+    
+    // Get form data
     const studentData = {
-        student_id: document.getElementById('studentId').value,
-        email: document.getElementById('studentEmail').value,
-        first_name: document.getElementById('studentFirstName').value,
-        last_name: document.getElementById('studentLastName').value,
-        department: document.getElementById('studentDepartment').value,
-        section: document.getElementById('studentSection').value,
-        mobile: document.getElementById('studentMobile').value
+        student_id: document.getElementById('studentId').value.trim(),
+        email: document.getElementById('studentEmail').value.trim(),
+        first_name: document.getElementById('studentFirstName').value.trim(),
+        last_name: document.getElementById('studentLastName').value.trim(),
+        department: document.getElementById('studentDepartment').value.trim(),
+        section: document.getElementById('studentSection').value.trim(),
+        mobile: document.getElementById('studentMobile').value.trim()
     };
+    
+    console.log('Student data collected:', studentData);
+    
+    // Client-side validation
+    const validation = validateStudentData(studentData);
+    if (!validation.isValid) {
+        alert('Validation Error: ' + validation.errors.join(', '));
+        console.error('Validation failed:', validation.errors);
+        return;
+    }
+    
+    console.log('Client-side validation passed');
+    
+    // Show loading state
+    const submitButton = event.target;
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Adding...';
+    submitButton.disabled = true;
     
     fetch('/api/add_student', {
         method: 'POST',
@@ -936,35 +1116,109 @@ function addStudent() {
         },
         body: JSON.stringify(studentData)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.text().then(text => {
+            console.log('Raw response:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Failed to parse response as JSON:', text);
+                throw new Error('Invalid JSON response from server');
+            }
+        });
+    })
     .then(data => {
+        console.log('Parsed response data:', data);
+        
         if (data.success) {
             alert('Student added successfully!');
             bootstrap.Modal.getInstance(document.getElementById('addStudentModal')).hide();
             document.getElementById('addStudentForm').reset();
             location.reload(); // Refresh to update counts
         } else {
-            alert('Error: ' + data.error);
+            alert('Error: ' + (data.error || 'Unknown error occurred'));
+            console.error('Server returned error:', data);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Error adding student');
+        console.error('Network or parsing error:', error);
+        alert('Error adding student: ' + error.message);
+    })
+    .finally(() => {
+        // Restore button state
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
     });
 }
 
-// Function to add teacher
-function addTeacher() {
-    const teacherData = {
-        teacher_id: document.getElementById('teacherId').value,
-        email: document.getElementById('teacherEmail').value,
-        first_name: document.getElementById('teacherFirstName').value,
-        last_name: document.getElementById('teacherLastName').value,
-        subject: document.getElementById('teacherSubject').value,
-        department: document.getElementById('teacherDepartment').value,
-        section: document.getElementById('teacherSection').value,
-        mobile: document.getElementById('teacherMobile').value
+// Validation function for student data
+function validateStudentData(data) {
+    const errors = [];
+    
+    if (!data.student_id) errors.push('Student ID is required');
+    if (!data.email) errors.push('Email is required');
+    if (!data.first_name) errors.push('First name is required');
+    if (!data.last_name) errors.push('Last name is required');
+    if (!data.department) errors.push('Department is required');
+    if (!data.section) errors.push('Section is required');
+    if (!data.mobile) errors.push('Mobile number is required');
+    
+    // Email validation
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        errors.push('Invalid email format');
+    }
+    
+    // Mobile validation
+    if (data.mobile && !/^\d{10}$/.test(data.mobile)) {
+        errors.push('Mobile number must be 10 digits');
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        errors: errors
     };
+}
+
+// Function to add teacher with enhanced validation
+function addTeacher() {
+    console.log('Starting addTeacher function...');
+    
+    // Get form data
+    const teacherData = {
+        teacher_id: document.getElementById('teacherId').value.trim(),
+        email: document.getElementById('teacherEmail').value.trim(),
+        first_name: document.getElementById('teacherFirstName').value.trim(),
+        last_name: document.getElementById('teacherLastName').value.trim(),
+        subject: document.getElementById('teacherSubject').value.trim(),
+        department: document.getElementById('teacherDepartment').value.trim(),
+        section: document.getElementById('teacherSection').value.trim(),
+        mobile: document.getElementById('teacherMobile').value.trim()
+    };
+    
+    console.log('Teacher data collected:', teacherData);
+    
+    // Client-side validation
+    const validation = validateTeacherData(teacherData);
+    if (!validation.isValid) {
+        alert('Validation Error: ' + validation.errors.join(', '));
+        console.error('Validation failed:', validation.errors);
+        return;
+    }
+    
+    console.log('Client-side validation passed');
+    
+    // Show loading state
+    const submitButton = event.target;
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Adding...';
+    submitButton.disabled = true;
     
     fetch('/api/add_teacher', {
         method: 'POST',
@@ -973,21 +1227,75 @@ function addTeacher() {
         },
         body: JSON.stringify(teacherData)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.text().then(text => {
+            console.log('Raw response:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Failed to parse response as JSON:', text);
+                throw new Error('Invalid JSON response from server');
+            }
+        });
+    })
     .then(data => {
+        console.log('Parsed response data:', data);
+        
         if (data.success) {
             alert('Teacher added successfully!');
             bootstrap.Modal.getInstance(document.getElementById('addTeacherModal')).hide();
             document.getElementById('addTeacherForm').reset();
             location.reload(); // Refresh to update counts
         } else {
-            alert('Error: ' + data.error);
+            alert('Error: ' + (data.error || 'Unknown error occurred'));
+            console.error('Server returned error:', data);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Error adding teacher');
+        console.error('Network or parsing error:', error);
+        alert('Error adding teacher: ' + error.message);
+    })
+    .finally(() => {
+        // Restore button state
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
     });
+}
+
+// Validation function for teacher data
+function validateTeacherData(data) {
+    const errors = [];
+    
+    if (!data.teacher_id) errors.push('Teacher ID is required');
+    if (!data.email) errors.push('Email is required');
+    if (!data.first_name) errors.push('First name is required');
+    if (!data.last_name) errors.push('Last name is required');
+    if (!data.subject) errors.push('Subject is required');
+    if (!data.department) errors.push('Department is required');
+    if (!data.section) errors.push('Section is required');
+    if (!data.mobile) errors.push('Mobile number is required');
+    
+    // Email validation
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        errors.push('Invalid email format');
+    }
+    
+    // Mobile validation
+    if (data.mobile && !/^\d{10}$/.test(data.mobile)) {
+        errors.push('Mobile number must be 10 digits');
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    };
 }
 
 // Function to delete student
@@ -1034,6 +1342,169 @@ function deleteTeacher(teacherId) {
             alert('Error deleting teacher');
         });
     }
+}
+
+// Schedule Management Functions
+function viewCurrentSchedules() {
+    // Create and show modal for viewing current schedules
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Current Class Schedules</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="scheduleContent">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading schedules...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+    
+    // Load schedule data
+    fetch('/api/schedules')
+        .then(response => response.json())
+        .then(data => {
+            const content = document.getElementById('scheduleContent');
+            if (data.length === 0) {
+                content.innerHTML = '<p class="text-muted text-center">No schedules created yet. Use "Manage Schedule" to create timetables.</p>';
+            } else {
+                let html = '';
+                const classes = ['CSIT-A', 'CSIT-B', 'CSD-A', 'CSD-B'];
+                classes.forEach(className => {
+                    const classSchedules = data.filter(s => s.class_name === className);
+                    if (classSchedules.length > 0) {
+                        html += `<h6 class="text-primary">${className}</h6>`;
+                        html += '<div class="table-responsive mb-3">';
+                        html += '<table class="table table-sm table-bordered">';
+                        html += '<thead><tr><th>Day</th><th>Period</th><th>Subject</th><th>Teacher</th><th>Time</th></tr></thead><tbody>';
+                        classSchedules.forEach(schedule => {
+                            html += `<tr>
+                                <td>${schedule.day_of_week}</td>
+                                <td>${schedule.period_number}</td>
+                                <td>${schedule.subject}</td>
+                                <td>${schedule.teacher_name || 'Not Assigned'}</td>
+                                <td>${schedule.start_time} - ${schedule.end_time}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table></div>';
+                    }
+                });
+                content.innerHTML = html || '<p class="text-muted text-center">No schedules found.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('scheduleContent').innerHTML = '<p class="text-danger text-center">Error loading schedules.</p>';
+        });
+    
+    // Clean up modal when closed
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
+}
+
+function showTeacherSchedules() {
+    // Show teacher workload and schedules
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Teacher Schedules & Workload</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="teacherScheduleContent">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading teacher schedules...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+    
+    // Load teacher schedule data
+    fetch('/api/teacher-schedules')
+        .then(response => response.json())
+        .then(data => {
+            const content = document.getElementById('teacherScheduleContent');
+            if (Object.keys(data).length === 0) {
+                content.innerHTML = '<p class="text-muted text-center">No teacher schedules found.</p>';
+            } else {
+                let html = '';
+                Object.keys(data).forEach(teacherName => {
+                    const schedules = data[teacherName];
+                    html += `<h6 class="text-success">${teacherName} (${schedules.length} periods)</h6>`;
+                    html += '<div class="table-responsive mb-3">';
+                    html += '<table class="table table-sm table-bordered">';
+                    html += '<thead><tr><th>Class</th><th>Day</th><th>Period</th><th>Subject</th><th>Time</th></tr></thead><tbody>';
+                    schedules.forEach(schedule => {
+                        html += `<tr>
+                            <td>${schedule.class_name}-${schedule.section}</td>
+                            <td>${schedule.day_of_week}</td>
+                            <td>${schedule.period_number}</td>
+                            <td>${schedule.subject}</td>
+                            <td>${schedule.start_time} - ${schedule.end_time}</td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table></div>';
+                });
+                content.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('teacherScheduleContent').innerHTML = '<p class="text-danger text-center">Error loading teacher schedules.</p>';
+        });
+    
+    // Clean up modal when closed
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
+}
+
+function checkScheduleConflicts() {
+    // Check for schedule conflicts
+    fetch('/api/schedule-conflicts')
+        .then(response => response.json())
+        .then(data => {
+            if (data.conflicts && data.conflicts.length > 0) {
+                let message = 'Schedule Conflicts Found:\\n\\n';
+                data.conflicts.forEach(conflict => {
+                    message += `• ${conflict.description}\\n`;
+                });
+                alert(message);
+            } else {
+                alert('No schedule conflicts found! ✅');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error checking schedule conflicts.');
+        });
 }
 </script>
 

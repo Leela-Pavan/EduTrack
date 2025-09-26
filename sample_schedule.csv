@@ -1,0 +1,16 @@
+Day,Period,Subject,Teacher,Room
+Monday,1,Mathematics,Chaitanya,Room-101
+Monday,2,Physics,Aneela,Room-102
+Monday,3,Chemistry,Krishnaveni,Room-103
+Tuesday,1,English,Praveen,Room-104
+Tuesday,2,Computer Science,Tulasi,Room-105
+Tuesday,3,Biology,Suresh,Room-106
+Wednesday,1,History,Gopala Krishna,Room-107
+Wednesday,2,Geography,Chaitanya,Room-108
+Wednesday,3,Economics,Aneela,Room-109
+Thursday,1,Physical Education,Krishnaveni,Room-110
+Thursday,2,Art,Praveen,Room-111
+Thursday,3,Music,Tulasi,Room-112
+Friday,1,Mathematics,Suresh,Room-101
+Friday,2,Physics,Gopala Krishna,Room-102
+Friday,3,Chemistry,Chaitanya,Room-103

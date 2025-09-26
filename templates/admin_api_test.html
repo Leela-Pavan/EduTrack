@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        #log { background: #f5f5f5; padding: 10px; height: 300px; overflow-y: scroll; }
+    </style>
+</head>
+<body>
+    <h1>EduTrack Admin API Test</h1>
+    
+    <div class="test-section">
+        <h2>Add Student Test</h2>
+        <button onclick="testAddStudent()">Test Add Student</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Add Teacher Test</h2>
+        <button onclick="testAddTeacher()">Test Add Teacher</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Log</h2>
+        <button onclick="clearLog()">Clear Log</button>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        async function testAddStudent() {
+            log('Testing add student API...', 'info');
+            
+            const studentData = {
+                student_id: 'TEST_FRONTEND_' + Date.now(),
+                email: 'test@frontend.com',
+                first_name: 'Frontend',
+                last_name: 'Test',
+                department: 'Computer Science',
+                section: 'CSIT-A',
+                mobile: '1111111111'
+            };
+            
+            log(`Sending data: ${JSON.stringify(studentData)}`, 'info');
+            
+            try {
+                const response = await fetch('/api/add_student', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(studentData)
+                });
+                
+                log(`Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                const responseText = await response.text();
+                log(`Response body: ${responseText}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    if (data.success) {
+                        log('✓ Student added successfully!', 'success');
+                    } else {
+                        log(`✗ API returned error: ${data.error}`, 'error');
+                    }
+                } else {
+                    log(`✗ HTTP error: ${response.status} ${response.statusText}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`✗ Network error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAddTeacher() {
+            log('Testing add teacher API...', 'info');
+            
+            const teacherData = {
+                teacher_id: 'TEST_TEACHER_' + Date.now(),
+                email: 'teacher@frontend.com',
+                first_name: 'Frontend',
+                last_name: 'Teacher',
+                subject: 'Mathematics',
+                department: 'Computer Science',
+                section: 'CSIT-A',
+                mobile: '2222222222'
+            };
+            
+            log(`Sending data: ${JSON.stringify(teacherData)}`, 'info');
+            
+            try {
+                const response = await fetch('/api/add_teacher', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(teacherData)
+                });
+                
+                log(`Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                const responseText = await response.text();
+                log(`Response body: ${responseText}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    if (data.success) {
+                        log('✓ Teacher added successfully!', 'success');
+                    } else {
+                        log(`✗ API returned error: ${data.error}`, 'error');
+                    }
+                } else {
+                    log(`✗ HTTP error: ${response.status} ${response.statusText}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`✗ Network error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Log initial state
+        log('Admin API Test page loaded', 'success');
+        log('Make sure you are logged in as admin before testing!', 'info');
+    </script>
+</body>
+</html>

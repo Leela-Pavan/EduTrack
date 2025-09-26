@@ -533,6 +533,12 @@ def teacher_dashboard():
                          attendance_data=attendance_data,
                          current_date=current_date)
 
+@app.route('/admin/api_test')
+@login_required
+@role_required('admin')
+def admin_api_test():
+    return render_template('admin_api_test.html')
+
 @app.route('/admin/dashboard')
 @login_required
 @role_required('admin')
@@ -575,6 +581,63 @@ def admin_dashboard():
                          class_attendance=class_attendance,
                          current_date=current_date)
 
+@app.route('/admin/manage-schedule')
+@login_required
+@role_required('admin')
+def manage_schedule():
+    """Admin schedule management page"""
+    conn = sqlite3.connect('school_system.db')
+    cursor = conn.cursor()
+    
+    # Get all teachers for dropdown
+    cursor.execute('''SELECT t.id, t.first_name, t.last_name, t.subject 
+                     FROM teachers t
+                     JOIN users u ON t.user_id = u.id
+                     ORDER BY t.first_name, t.last_name''')
+    teachers = cursor.fetchall()
+    
+    # Get existing schedules
+    cursor.execute('''SELECT t.*, 
+                     (te.first_name || ' ' || te.last_name) as teacher_name
+                     FROM timetable t
+                     LEFT JOIN teachers te ON t.teacher_id = te.id
+                     ORDER BY t.class_name, t.section, t.day_of_week, t.period_number''')
+    schedules = cursor.fetchall()
+    
+    conn.close()
+    
+    # Define available classes and time slots
+    classes = [
+        {'name': 'CSIT', 'sections': ['A', 'B']},
+        {'name': 'CSD', 'sections': ['A', 'B']}
+    ]
+    
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    periods = [
+        {'number': 1, 'time': '09:00-09:50'},
+        {'number': 2, 'time': '09:50-10:40'},
+        {'number': 3, 'time': '11:00-11:50'},
+        {'number': 4, 'time': '11:50-12:40'},
+        {'number': 5, 'time': '01:30-02:20'},
+        {'number': 6, 'time': '02:20-03:10'},
+        {'number': 7, 'time': '03:30-04:20'},
+        {'number': 8, 'time': '04:20-05:10'}
+    ]
+    
+    subjects = [
+        'Mathematics', 'Physics', 'Chemistry', 'English', 'Computer Science',
+        'Programming', 'Database Management', 'Software Engineering', 
+        'Web Development', 'Data Structures', 'Algorithms', 'Network Security'
+    ]
+    
+    return render_template('manage_schedule.html',
+                         teachers=teachers,
+                         schedules=schedules,
+                         classes=classes,
+                         days=days,
+                         periods=periods,
+                         subjects=subjects)
+
 @app.route('/api/students')
 @login_required
 def get_all_students():
@@ -584,13 +647,12 @@ def get_all_students():
     conn = sqlite3.connect('school_system.db')
     cursor = conn.cursor()
     
-    # Get all students with their details and passwords
+    # Get all students with their details
     cursor.execute('''
         SELECT s.student_id, s.first_name, s.last_name, s.class_name, s.section, 
-               s.mobile, u.email, u.username, aps.plain_password
+               s.mobile, u.email, u.username
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
-        LEFT JOIN admin_password_store aps ON u.id = aps.user_id
         ORDER BY s.class_name, s.section, s.first_name, s.last_name
     ''')
     
@@ -609,6 +671,13 @@ def get_all_students():
         elif student[3] == '12':
             class_display = 'CSE'
         
+        # Generate password based on username pattern (username + 123)
+        username = student[7] if student[7] else 'unknown'
+        if username == 'ADMIN':
+            password = 'admin123'
+        else:
+            password = f'{username.lower()}123'
+        
         student_list.append({
             'student_id': student[0],
             'name': f"{student[1]} {student[2]}",
@@ -617,7 +686,7 @@ def get_all_students():
             'year': '2',  # Default year as we don't have this in current schema
             'email': student[6] if student[6] else 'Not provided',
             'mobile': student[5] if student[5] else 'Not provided',
-            'password': student[8] if student[8] else student[7] if student[7] else 'Not set'  # Plain password or username
+            'password': password
         })
     
     return jsonify(student_list)
@@ -631,13 +700,12 @@ def get_all_teachers():
     conn = sqlite3.connect('school_system.db')
     cursor = conn.cursor()
     
-    # Get all teachers with their details and passwords
+    # Get all teachers with their details
     cursor.execute('''
         SELECT t.teacher_id, t.first_name, t.last_name, t.subject, 
-               t.class_name, t.section, u.email, u.username, aps.plain_password
+               t.class_name, t.section, u.email, u.username
         FROM teachers t
         LEFT JOIN users u ON t.user_id = u.id
-        LEFT JOIN admin_password_store aps ON u.id = aps.user_id
         ORDER BY t.first_name, t.last_name
     ''')
     
@@ -656,29 +724,76 @@ def get_all_teachers():
         elif teacher[4] == '12':
             class_display = 'CSE'
         
+        # Handle name construction - use username if first/last names are empty
+        first_name = teacher[1].strip() if teacher[1] else ''
+        last_name = teacher[2].strip() if teacher[2] else ''
+        
+        if first_name and last_name:
+            display_name = f"{first_name} {last_name}"
+        elif first_name:
+            display_name = first_name
+        elif last_name:
+            display_name = last_name
+        else:
+            # Use username as display name if no first/last name available
+            display_name = teacher[7] if teacher[7] else 'Unnamed Teacher'
+        
+        # Generate password based on username pattern (username + 123)
+        username = teacher[7] if teacher[7] else 'unknown'
+        if username == 'ADMIN':
+            password = 'admin123'
+        elif username == 'Gopala Krishna':
+            password = 'gopala krishna123'
+        else:
+            password = f'{username.lower()}123'
+        
         teacher_list.append({
             'teacher_id': teacher[0],
-            'name': f"{teacher[1]} {teacher[2]}",
+            'name': display_name,
             'subject': teacher[3] if teacher[3] else 'Not assigned',
             'department': class_display,
             'section': teacher[5] if teacher[5] else 'All',
             'email': teacher[6] if teacher[6] else 'Not provided',
-            'password': teacher[8] if teacher[8] else teacher[7] if teacher[7] else 'Not set'  # Plain password or username
+            'username': teacher[7] if teacher[7] else 'Not set',
+            'password': password
         })
     
     return jsonify(teacher_list)
 
 @app.route('/api/add_student', methods=['POST'])
-@login_required
+@login_required  
 def add_student():
     if session.get('role') != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    data = request.get_json()
+        return jsonify({'error': 'Unauthorized access. Admin privileges required.'}), 403
     
     try:
+        data = request.get_json()
+        
+        # Validate request data
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+            
+        required_fields = ['student_id', 'email', 'first_name', 'last_name', 'department', 'section', 'mobile']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
+            return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
+        
+        app.logger.info(f'Adding student with data: {data}')
+        
         conn = sqlite3.connect('school_system.db')
         cursor = conn.cursor()
+        
+        # Check if student_id already exists
+        cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (data['student_id'],))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'Student ID {data["student_id"]} already exists'}), 400
+        
+        # Check if email already exists
+        cursor.execute('SELECT email FROM users WHERE email = ?', (data['email'],))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'Email {data["email"]} is already registered'}), 400
         
         # First create user account
         password = 'student123'  # Default password
@@ -688,6 +803,7 @@ def add_student():
         ''', (data['student_id'], generate_password_hash(password), data['email']))
         
         user_id = cursor.lastrowid
+        app.logger.info(f'Created user account with ID: {user_id}')
         
         # Store plain password for admin reference
         cursor.execute('''
@@ -705,21 +821,48 @@ def add_student():
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Student added successfully'})
+        app.logger.info(f'Successfully added student: {data["student_id"]}')
+        return jsonify({'success': True, 'message': f'Student {data["student_id"]} added successfully'})
+        
+    except sqlite3.IntegrityError as e:
+        app.logger.error(f'Database integrity error: {e}')
+        return jsonify({'error': f'Database constraint violation: {str(e)}'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/add_teacher', methods=['POST'])
+        app.logger.error(f'Error adding student: {e}')
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500@app.route('/api/add_teacher', methods=['POST'])
 @login_required  
 def add_teacher():
     if session.get('role') != 'admin':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    data = request.get_json()
+        return jsonify({'error': 'Unauthorized access. Admin privileges required.'}), 403
     
     try:
+        data = request.get_json()
+        
+        # Validate request data
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+            
+        required_fields = ['teacher_id', 'email', 'first_name', 'last_name', 'subject', 'department', 'section', 'mobile']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
+            return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
+        
+        app.logger.info(f'Adding teacher with data: {data}')
+        
         conn = sqlite3.connect('school_system.db')
         cursor = conn.cursor()
+        
+        # Check if teacher_id already exists
+        cursor.execute('SELECT teacher_id FROM teachers WHERE teacher_id = ?', (data['teacher_id'],))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'Teacher ID {data["teacher_id"]} already exists'}), 400
+        
+        # Check if email already exists
+        cursor.execute('SELECT email FROM users WHERE email = ?', (data['email'],))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'Email {data["email"]} is already registered'}), 400
         
         # First create user account
         password = 'teacher123'  # Default password
@@ -729,6 +872,7 @@ def add_teacher():
         ''', (data['teacher_id'], generate_password_hash(password), data['email']))
         
         user_id = cursor.lastrowid
+        app.logger.info(f'Created user account with ID: {user_id}')
         
         # Store plain password for admin reference
         cursor.execute('''
@@ -746,9 +890,15 @@ def add_teacher():
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Teacher added successfully'})
+        app.logger.info(f'Successfully added teacher: {data["teacher_id"]}')
+        return jsonify({'success': True, 'message': f'Teacher {data["teacher_id"]} added successfully'})
+        
+    except sqlite3.IntegrityError as e:
+        app.logger.error(f'Database integrity error: {e}')
+        return jsonify({'error': f'Database constraint violation: {str(e)}'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'Error adding teacher: {e}')
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/api/delete_student/<student_id>', methods=['DELETE'])
 @login_required
@@ -821,6 +971,437 @@ def delete_teacher(teacher_id):
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/schedules')
+@login_required
+@role_required('admin')
+def get_schedules():
+    """Get all schedules"""
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''SELECT t.*, 
+                         CASE 
+                             WHEN te.first_name IS NOT NULL AND te.last_name IS NOT NULL 
+                                 AND te.first_name != '' AND te.last_name != '' 
+                             THEN te.first_name || ' ' || te.last_name
+                             WHEN te.first_name IS NOT NULL AND te.first_name != '' 
+                             THEN te.first_name
+                             WHEN te.last_name IS NOT NULL AND te.last_name != '' 
+                             THEN te.last_name
+                             WHEN u.username IS NOT NULL 
+                             THEN u.username
+                             ELSE 'Unknown Teacher'
+                         END as teacher_name
+                         FROM timetable t
+                         LEFT JOIN teachers te ON t.teacher_id = te.user_id
+                         LEFT JOIN users u ON t.teacher_id = u.id
+                         ORDER BY t.class_name, t.section, t.day_of_week, t.period_number''')
+        
+        schedules = []
+        for row in cursor.fetchall():
+            schedules.append({
+                'id': row[0],
+                'class_name': row[1],
+                'section': row[2],
+                'day_of_week': row[3],
+                'period_number': row[4],
+                'subject': row[5],
+                'teacher_id': row[6],
+                'start_time': row[7],
+                'end_time': row[8],
+                'teacher_name': row[9]
+            })
+        
+        conn.close()
+        return jsonify(schedules)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/schedule', methods=['POST'])
+@login_required
+@role_required('admin')
+def add_schedule():
+    """Add or update a schedule entry"""
+    try:
+        data = request.get_json()
+        
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Check if schedule already exists for this slot
+        cursor.execute('''SELECT id FROM timetable 
+                         WHERE class_name = ? AND section = ? AND day_of_week = ? AND period_number = ?''',
+                      (data['class_name'], data['section'], data['day_of_week'], data['period_number']))
+        
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Update existing schedule
+            cursor.execute('''UPDATE timetable SET 
+                             subject = ?, teacher_id = ?, start_time = ?, end_time = ?
+                             WHERE id = ?''',
+                          (data['subject'], data.get('teacher_id'), data['start_time'], 
+                           data['end_time'], existing[0]))
+        else:
+            # Insert new schedule
+            cursor.execute('''INSERT INTO timetable 
+                             (class_name, section, day_of_week, period_number, subject, teacher_id, start_time, end_time)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                          (data['class_name'], data['section'], data['day_of_week'], 
+                           data['period_number'], data['subject'], data.get('teacher_id'), 
+                           data['start_time'], data['end_time']))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bulk-schedule', methods=['POST'])
+@login_required
+@role_required('admin')
+def add_bulk_schedule():
+    """Add multiple schedule entries from CSV file upload"""
+    try:
+        # Check if this is a file upload or JSON data
+        if 'file' in request.files:
+            # Handle CSV file upload
+            return handle_csv_bulk_schedule()
+        else:
+            # Handle JSON bulk schedule (existing functionality)
+            return handle_json_bulk_schedule()
+            
+    except Exception as e:
+        print(f"Bulk schedule error: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+def handle_csv_bulk_schedule():
+    """Handle CSV file upload for bulk schedule creation"""
+    import csv
+    import io
+    
+    try:
+        file = request.files['file']
+        class_name = request.form.get('class_name')
+        section = request.form.get('section')
+        replace_existing = request.form.get('replace_existing') == 'true'
+        
+        if not file or not file.filename.endswith('.csv'):
+            return jsonify({'success': False, 'message': 'Please upload a valid CSV file'})
+        
+        # Read CSV content
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_input = csv.DictReader(stream)
+        
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # If replace_existing is true, delete existing schedules for this class
+        if replace_existing:
+            cursor.execute('''DELETE FROM timetable WHERE class_name = ? AND section = ?''',
+                          (class_name, section))
+        
+        imported_count = 0
+        errors = []
+        
+        # Default time mappings for periods
+        period_times = {
+            1: {'start': '09:00', 'end': '09:50'},
+            2: {'start': '09:50', 'end': '10:40'},
+            3: {'start': '11:00', 'end': '11:50'},
+            4: {'start': '11:50', 'end': '12:40'},
+            5: {'start': '13:30', 'end': '14:20'},
+            6: {'start': '14:20', 'end': '15:10'},
+            7: {'start': '15:30', 'end': '16:20'},
+            8: {'start': '16:20', 'end': '17:10'}
+        }
+        
+        for row_num, row in enumerate(csv_input, start=2):  # Start from 2 (header is row 1)
+            try:
+                # Expected CSV columns: Day, Period, Subject, Teacher, Room (optional)
+                day = row.get('Day', '').strip()
+                period_str = row.get('Period', '').strip()
+                subject = row.get('Subject', '').strip()
+                teacher_name = row.get('Teacher', '').strip()
+                room = row.get('Room', '').strip()
+                
+                if not day or not period_str or not subject:
+                    errors.append(f"Row {row_num}: Missing required fields (Day, Period, Subject)")
+                    continue
+                
+                # Convert period to integer
+                try:
+                    period = int(period_str)
+                except ValueError:
+                    errors.append(f"Row {row_num}: Invalid period number '{period_str}'")
+                    continue
+                
+                # Find teacher ID if teacher name is provided
+                teacher_id = None
+                if teacher_name:
+                    # Try to find teacher by name or username
+                    cursor.execute('''
+                        SELECT t.user_id FROM teachers t 
+                        LEFT JOIN users u ON t.user_id = u.id
+                        WHERE LOWER(t.first_name || ' ' || t.last_name) LIKE LOWER(?) 
+                        OR LOWER(u.username) LIKE LOWER(?)
+                        LIMIT 1
+                    ''', (f'%{teacher_name}%', f'%{teacher_name}%'))
+                    
+                    teacher_result = cursor.fetchone()
+                    if teacher_result:
+                        teacher_id = teacher_result[0]
+                
+                # Get default times for this period
+                times = period_times.get(period, {'start': '09:00', 'end': '09:50'})
+                
+                # Check if this slot already exists (and we're not replacing)
+                if not replace_existing:
+                    cursor.execute('''SELECT id FROM timetable 
+                                     WHERE class_name = ? AND section = ? AND day_of_week = ? AND period_number = ?''',
+                                  (class_name, section, day, period))
+                    
+                    if cursor.fetchone():
+                        errors.append(f"Row {row_num}: Schedule already exists for {day} Period {period}")
+                        continue
+                
+                # Insert the schedule entry
+                cursor.execute('''INSERT INTO timetable 
+                                 (class_name, section, day_of_week, period_number, subject, teacher_id, start_time, end_time)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                              (class_name, section, day, period, subject, teacher_id, times['start'], times['end']))
+                
+                imported_count += 1
+                
+            except Exception as e:
+                errors.append(f"Row {row_num}: {str(e)}")
+        
+        conn.commit()
+        conn.close()
+        
+        # Prepare response
+        response_data = {
+            'success': True,
+            'imported': imported_count,
+            'message': f'Successfully imported {imported_count} schedule entries'
+        }
+        
+        if errors:
+            response_data['warnings'] = errors
+            response_data['message'] += f' with {len(errors)} errors/warnings'
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"CSV bulk schedule error: {e}")
+        return jsonify({'success': False, 'message': f'Error processing CSV file: {str(e)}'})
+
+def handle_json_bulk_schedule():
+    """Handle JSON bulk schedule creation (existing functionality)"""
+    data = request.get_json()
+    
+    conn = sqlite3.connect('school_system.db')
+    cursor = conn.cursor()
+    
+    created_count = 0
+    
+    # Default time mappings for periods
+    period_times = {
+        1: {'start': '09:00', 'end': '09:50'},
+        2: {'start': '09:50', 'end': '10:40'},
+        3: {'start': '11:00', 'end': '11:50'},
+        4: {'start': '11:50', 'end': '12:40'},
+        5: {'start': '13:30', 'end': '14:20'},
+        6: {'start': '14:20', 'end': '15:10'},
+        7: {'start': '15:30', 'end': '16:20'},
+        8: {'start': '16:20', 'end': '17:10'}
+    }
+    
+    for class_section in data['classes']:
+        class_name, section = class_section.split('-')
+        for day in data['days']:
+            for period in data['periods']:
+                # Check if slot is already occupied
+                cursor.execute('''SELECT id FROM timetable 
+                                 WHERE class_name = ? AND section = ? AND day_of_week = ? AND period_number = ?''',
+                              (class_name, section, day, period))
+                
+                if not cursor.fetchone():
+                    # Get default times for this period
+                    times = period_times.get(period, {'start': '09:00', 'end': '09:50'})
+                    
+                    cursor.execute('''INSERT INTO timetable 
+                                     (class_name, section, day_of_week, period_number, subject, teacher_id, start_time, end_time)
+                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                                  (class_name, section, day, period, data['subject'], 
+                                   data['teacher_id'], times['start'], times['end']))
+                    created_count += 1
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'created': created_count})
+
+@app.route('/api/teacher-schedules')
+@login_required
+@role_required('admin')
+def get_teacher_schedules():
+    """Get schedules grouped by teacher"""
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''SELECT t.*, 
+                         (te.first_name || ' ' || te.last_name) as teacher_name
+                         FROM timetable t
+                         LEFT JOIN teachers te ON t.teacher_id = te.id
+                         WHERE t.teacher_id IS NOT NULL
+                         ORDER BY teacher_name, t.day_of_week, t.period_number''')
+        
+        teacher_schedules = {}
+        for row in cursor.fetchall():
+            teacher_name = row[9] or 'Unassigned'
+            if teacher_name not in teacher_schedules:
+                teacher_schedules[teacher_name] = []
+            
+            teacher_schedules[teacher_name].append({
+                'class_name': row[1],
+                'section': row[2],
+                'day_of_week': row[3],
+                'period_number': row[4],
+                'subject': row[5],
+                'start_time': row[7],
+                'end_time': row[8]
+            })
+        
+        conn.close()
+        return jsonify(teacher_schedules)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/schedule-conflicts')
+@login_required
+@role_required('admin')
+def check_schedule_conflicts():
+    """Check for schedule conflicts"""
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        conflicts = []
+        
+        # Check for teacher conflicts (same teacher, same time, different classes)
+        cursor.execute('''SELECT t1.teacher_id, t1.day_of_week, t1.period_number, t1.start_time,
+                         COUNT(*) as conflict_count,
+                         GROUP_CONCAT(t1.class_name || '-' || t1.section) as classes,
+                         te.first_name || ' ' || te.last_name as teacher_name
+                         FROM timetable t1
+                         JOIN teachers te ON t1.teacher_id = te.id
+                         GROUP BY t1.teacher_id, t1.day_of_week, t1.period_number, t1.start_time
+                         HAVING COUNT(*) > 1''')
+        
+        for row in cursor.fetchall():
+            conflicts.append({
+                'type': 'teacher_conflict',
+                'description': f"Teacher {row[6]} has conflicting classes: {row[5]} on {row[1]} period {row[2]}"
+            })
+        
+        conn.close()
+        return jsonify({'conflicts': conflicts})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/schedule-report')
+@login_required
+@role_required('admin')
+def generate_schedule_report():
+    """Generate a printable schedule report"""
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''SELECT t.*, 
+                         (te.first_name || ' ' || te.last_name) as teacher_name
+                         FROM timetable t
+                         LEFT JOIN teachers te ON t.teacher_id = te.id
+                         ORDER BY t.class_name, t.section, t.day_of_week, t.period_number''')
+        
+        schedules = cursor.fetchall()
+        conn.close()
+        
+        # Generate HTML report
+        html = '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Schedule Report - EduTrack</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                h1, h2 { color: #333; }
+                .class-header { background-color: #e3f2fd; font-weight: bold; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <h1>Class Schedules Report</h1>
+            <p>Generated on: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '''</p>
+        '''
+        
+        # Group schedules by class
+        current_class = None
+        for schedule in schedules:
+            class_section = f"{schedule[1]}-{schedule[2]}"
+            if current_class != class_section:
+                if current_class is not None:
+                    html += '</tbody></table>'
+                current_class = class_section
+                html += f'''
+                    <h2>{class_section}</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Period</th>
+                                <th>Time</th>
+                                <th>Subject</th>
+                                <th>Teacher</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                '''
+            
+            html += f'''
+                <tr>
+                    <td>{schedule[3]}</td>
+                    <td>{schedule[4]}</td>
+                    <td>{schedule[7]} - {schedule[8]}</td>
+                    <td>{schedule[5]}</td>
+                    <td>{schedule[9] or 'Not Assigned'}</td>
+                </tr>
+            '''
+        
+        if current_class is not None:
+            html += '</tbody></table>'
+        
+        html += '''
+        </body>
+        </html>
+        '''
+        
+        return html
+        
+    except Exception as e:
+        return f"Error generating report: {str(e)}", 500
 
 @app.route('/attendance/qr')
 @login_required
@@ -1066,13 +1647,24 @@ def update_student_profile():
         cursor.execute('UPDATE users SET email = ? WHERE id = ?', 
                       (data['email'], user_id))
         
-        # Update student table
+        # Check if date_of_birth column exists in students table
+        cursor.execute("PRAGMA table_info(students)")
+        students_columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'date_of_birth' not in students_columns:
+            cursor.execute("ALTER TABLE students ADD COLUMN date_of_birth TEXT")
+        
+        if 'year' not in students_columns:
+            cursor.execute("ALTER TABLE students ADD COLUMN year TEXT")
+        
+        # Update student table with all fields
         cursor.execute('''UPDATE students SET 
                          first_name = ?, last_name = ?, class_name = ?, 
-                         section = ?, mobile = ?
+                         section = ?, mobile = ?, date_of_birth = ?, year = ?
                          WHERE user_id = ?''',
                       (data['first_name'], data['last_name'], data['department'], 
-                       data['section'], data['mobile'], user_id))
+                       data['section'], data.get('mobile', ''), 
+                       data.get('date_of_birth', ''), data.get('year', ''), user_id))
         
         conn.commit()
         conn.close()
@@ -1220,10 +1812,303 @@ def add_sample_timetable():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/debug/create_test_student')
+def create_test_student():
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Create a test user for student
+        username = "testStudent"
+        email = "student@test.com"
+        password = "password123"
+        role = "student"
+        
+        # Check if user already exists
+        cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({'message': f"Student user '{username}' already exists."})
+        
+        # Create user account
+        hashed_password = generate_password_hash(password)
+        cursor.execute('''INSERT INTO users (username, email, password_hash, role)
+                         VALUES (?, ?, ?, ?)''', (username, email, hashed_password, role))
+        
+        user_id = cursor.lastrowid
+        
+        # Create student profile
+        student_data = (
+            user_id,      # user_id
+            "STU001",     # student_id
+            "Test",       # first_name
+            "Student",    # last_name
+            "CSIT",       # department
+            "A",          # section
+            "2",          # year
+            None          # profile_picture
+        )
+        
+        cursor.execute('''INSERT INTO students 
+                         (user_id, student_id, first_name, last_name, department, section, year, profile_picture)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', student_data)
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Test student account created successfully!',
+            'username': username,
+            'email': email,
+            'password': password,
+            'student_id': 'STU001'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/student/schedule')
+@login_required
+@role_required('student')
+def get_student_schedule():
+    """Get weekly schedule for logged-in student based on their class/section"""
+    try:
+        student_id = session.get('user_id')
+        
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Get student's class and section
+        cursor.execute('SELECT class_name, section FROM students WHERE id = ?', (student_id,))
+        student_info = cursor.fetchone()
+        
+        if not student_info:
+            return jsonify({'error': 'Student not found'}), 404
+        
+        class_name, section = student_info
+        
+        # Get the weekly schedule for the student's class/section
+        cursor.execute('''SELECT day_of_week, period_number, subject, start_time, end_time, room,
+                         teachers.first_name || ' ' || teachers.last_name as teacher_name
+                         FROM timetable 
+                         LEFT JOIN teachers ON timetable.teacher_id = teachers.id
+                         WHERE class_name = ? AND section = ?
+                         ORDER BY 
+                         CASE day_of_week 
+                             WHEN 'Monday' THEN 1
+                             WHEN 'Tuesday' THEN 2
+                             WHEN 'Wednesday' THEN 3
+                             WHEN 'Thursday' THEN 4
+                             WHEN 'Friday' THEN 5
+                             WHEN 'Saturday' THEN 6
+                             WHEN 'Sunday' THEN 7
+                         END,
+                         period_number''', (class_name, section))
+        
+        schedule_data = {}
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        
+        # Initialize schedule structure
+        for day in days:
+            schedule_data[day] = {}
+        
+        # Populate schedule data
+        for row in cursor.fetchall():
+            day, period, subject, start_time, end_time, room, teacher_name = row
+            if day in schedule_data:
+                schedule_data[day][f'period_{period}'] = {
+                    'period_number': period,
+                    'subject': subject,
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'room': room or 'TBA',
+                    'teacher_name': teacher_name or 'TBA'
+                }
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'class_info': f"{class_name}-{section}",
+            'schedule': schedule_data
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Register timetable blueprint
+from timetable_routes import timetable_bp
+app.register_blueprint(timetable_bp)
+
+# Timetable management routes
+@app.route('/admin/timetable/management')
+@login_required
+@role_required('admin')
+def timetable_management():
+    """Timetable management page for admin"""
+    # Get statistics for the timetable dashboard
+    try:
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Get counts for statistics
+        cursor.execute('SELECT COUNT(*) FROM timetable_teachers')
+        teachers_count = cursor.fetchone()[0] or 0
+        
+        cursor.execute('SELECT COUNT(*) FROM timetable_subjects')
+        subjects_count = cursor.fetchone()[0] or 0
+        
+        cursor.execute('SELECT COUNT(*) FROM timetable_classrooms WHERE is_active = 1')
+        classrooms_count = cursor.fetchone()[0] or 0
+        
+        cursor.execute('SELECT COUNT(*) FROM timetable_student_groups')
+        groups_count = cursor.fetchone()[0] or 0
+        
+        # Get last generation time
+        cursor.execute('''SELECT created_at FROM timetable_generations 
+                         WHERE generation_status = "completed" 
+                         ORDER BY created_at DESC LIMIT 1''')
+        last_gen = cursor.fetchone()
+        last_generation = last_gen[0] if last_gen else 'Never'
+        
+        conn.close()
+        
+        stats = {
+            'teachers': teachers_count,
+            'subjects': subjects_count,
+            'classrooms': classrooms_count,
+            'student_groups': groups_count
+        }
+        
+        return render_template('timetable_management.html', stats=stats, last_generation=last_generation)
+    except Exception as e:
+        flash(f'Error loading timetable management: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/timetable/dashboard')
+@login_required
+@role_required('admin')
+def timetable_dashboard():
+    """Interactive timetable dashboard"""
+    return render_template('timetable_dashboard.html')
+
+# Sample data population for timetable system
+def populate_timetable_sample_data():
+    """Populate timetable system with sample data"""
+    try:
+        from timetable_schema import create_timetable_tables, insert_sample_time_slots
+        
+        # Ensure tables exist
+        create_timetable_tables()
+        insert_sample_time_slots()
+        
+        conn = sqlite3.connect('school_system.db')
+        cursor = conn.cursor()
+        
+        # Check if sample data already exists
+        cursor.execute('SELECT COUNT(*) FROM timetable_teachers')
+        if cursor.fetchone()[0] > 0:
+            conn.close()
+            return
+        
+        # Insert sample teachers (EduTrack specific with 20 periods max)
+        sample_teachers = [
+            ('T001', 'Dr. Sarah', 'Williams', 'sarah@edutrack.com', '9876543210', 
+             '["Computer Science", "Programming", "Database Systems"]', '{"friday": ["afternoon"]}', 20),
+            ('T002', 'Prof. Michael', 'Davis', 'michael@edutrack.com', '9876543211',
+             '["Physics", "Mathematics", "Applied Mathematics"]', '{}', 20),
+            ('T003', 'Ms. Emily', 'Johnson', 'emily@edutrack.com', '9876543212',
+             '["English", "Technical Communication", "Literature"]', '{"monday": ["morning"]}', 18),
+            ('T004', 'Dr. Robert', 'Brown', 'robert@edutrack.com', '9876543213',
+             '["Chemistry", "Organic Chemistry", "Physical Chemistry"]', '{}', 20),
+            ('T005', 'Ms. Lisa', 'Garcia', 'lisa@edutrack.com', '9876543214',
+             '["Mathematics", "Statistics", "Discrete Mathematics"]', '{"wednesday": ["afternoon"]}', 20),
+            ('T006', 'Dr. Amit', 'Patel', 'amit@edutrack.com', '9876543215',
+             '["Data Structures", "Algorithms", "Computer Science"]', '{}', 20),
+            ('T007', 'Prof. Priya', 'Sharma', 'priya@edutrack.com', '9876543216',
+             '["Machine Learning", "AI", "Data Science"]', '{"thursday": ["morning"]}', 18),
+            ('T008', 'Mr. John', 'Wilson', 'john@edutrack.com', '9876543217',
+             '["Software Engineering", "Project Management", "Computer Science"]', '{}', 20)
+        ]
+        
+        for teacher_data in sample_teachers:
+            cursor.execute('''
+                INSERT INTO timetable_teachers 
+                (teacher_code, first_name, last_name, email, phone, subject_qualifications, 
+                 weekly_unavailability, max_hours_per_week)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', teacher_data)
+        
+        # Insert sample subjects (EduTrack CSIT/CSD curriculum)
+        sample_subjects = [
+            ('CS101', 'Programming Fundamentals', 'theory', 3, 2, 1, 'computer_lab', 30, 'Introduction to C/C++ programming'),
+            ('MATH101', 'Calculus and Analytical Geometry', 'theory', 4, 0, 2, None, 50, 'Differential and integral calculus'),
+            ('PHY101', 'Physics I', 'theory', 3, 2, 1, 'science_lab', 40, 'Mechanics and waves'),
+            ('ENG101', 'Technical English', 'theory', 2, 0, 1, None, 60, 'Communication skills for IT professionals'),
+            ('CS102', 'Digital Logic', 'theory', 2, 3, 1, 'computer_lab', 30, 'Boolean algebra and logic circuits'),
+            ('CS201', 'Data Structures and Algorithms', 'theory', 4, 2, 2, 'computer_lab', 30, 'Arrays, linked lists, trees, sorting'),
+            ('CS202', 'Object Oriented Programming', 'theory', 3, 3, 1, 'computer_lab', 30, 'OOP concepts using Java/C++'),
+            ('MATH201', 'Statistics and Probability', 'theory', 3, 0, 2, None, 50, 'Statistical methods and probability theory'),
+            ('CS301', 'Database Management Systems', 'theory', 3, 2, 1, 'computer_lab', 30, 'Database design and SQL'),
+            ('CS302', 'Software Engineering', 'theory', 3, 2, 1, 'computer_lab', 30, 'SDLC and software development methodologies'),
+            ('DS201', 'Machine Learning Fundamentals', 'theory', 3, 2, 1, 'computer_lab', 30, 'ML algorithms and applications'),
+            ('DS202', 'Data Science with Python', 'practical', 2, 3, 0, 'computer_lab', 30, 'Python for data analysis and visualization')
+        ]
+        
+        for subject_data in sample_subjects:
+            cursor.execute('''
+                INSERT INTO timetable_subjects 
+                (subject_code, subject_name, subject_type, weekly_lecture_hours, 
+                 weekly_lab_hours, weekly_tutorial_hours, requires_special_room, 
+                 min_room_capacity, description)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', subject_data)
+        
+        # Insert sample classrooms
+        sample_classrooms = [
+            ('101', 'Computer Lab 1', 'computer_lab', 30, '{"projector": true, "computers": 30, "internet": true}', 1, 'Main Building'),
+            ('102', 'Lecture Hall A', 'lecture_hall', 100, '{"projector": true, "whiteboard": true, "ac": true}', 1, 'Main Building'),
+            ('201', 'Physics Lab', 'science_lab', 25, '{"equipment": true, "safety": true}', 2, 'Science Block'),
+            ('202', 'Chemistry Lab', 'science_lab', 25, '{"equipment": true, "fume_hood": true}', 2, 'Science Block'),
+            ('301', 'Tutorial Room 1', 'tutorial_room', 20, '{"whiteboard": true}', 3, 'Main Building')
+        ]
+        
+        for classroom_data in sample_classrooms:
+            cursor.execute('''
+                INSERT INTO timetable_classrooms 
+                (room_number, room_name, room_type, seating_capacity, facilities, 
+                 floor_number, building_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', classroom_data)
+        
+        # Insert sample student groups (4 sections for EduTrack)
+        sample_groups = [
+            ('CSIT-A', 'Computer Science and Information Technology - Section A', '2024-25', 5, 48, None),
+            ('CSIT-B', 'Computer Science and Information Technology - Section B', '2024-25', 5, 45, None),
+            ('CSD-A', 'Computer Science with specialization in Data Science - Section A', '2024-25', 5, 42, None),
+            ('CSD-B', 'Computer Science with specialization in Data Science - Section B', '2024-25', 5, 40, None)
+        ]
+        
+        for group_data in sample_groups:
+            cursor.execute('''
+                INSERT INTO timetable_student_groups 
+                (group_code, group_name, academic_year, semester, student_count, coordinator_teacher_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', group_data)
+        
+        conn.commit()
+        conn.close()
+        print("✅ Sample timetable data populated successfully!")
+        
+    except Exception as e:
+        print(f"Error populating sample timetable data: {e}")
+
 if __name__ == '__main__':
     init_db()
     migrate_database()
     populate_dummy_data()
+    populate_timetable_sample_data()  # Add timetable sample data
     app.run(debug=True)
 
 
